@@ -113,6 +113,14 @@ jobs:
           fi
           echo "should_publish=true" >> $GITHUB_OUTPUT
 
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Ensure esbuild is executable
+        run: |
+          npx esbuild --version
+          npm list esbuild
+
       - name: Publish to npm
         if: steps.check-version.outputs.should_publish == 'true'
         run: npm publish --access=public

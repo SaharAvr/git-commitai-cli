@@ -7,13 +7,18 @@
   "bin": {
     "git-commitai": "./dist/cli.cjs"
   },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
   "scripts": {
-    "build": "tsc && esbuild src/cli.ts --bundle --platform=node --format=cjs --outfile=dist/cli.cjs",
+    "build": "esbuild src/cli.ts --bundle --platform=node --format=cjs --outfile=dist/cli.cjs",
     "dev": "node dist/cli.cjs",
     "predev": "npm run build --silent",
-    "clean": "rimraf dist",
+    "clean": "rm -rf dist",
     "prebuild": "npm run clean",
-    "postinstall": "npm run build || true",
+    "prepublishOnly": "npm run build",
     "lint": "eslint 'src/**/*.{ts,tsx}'",
     "lint:fix": "eslint 'src/**/*.{ts,tsx}' --fix",
     "format": "prettier --write \"src/**/*.ts\"",
@@ -32,15 +37,16 @@
   "author": "Sahar Avraham",
   "license": "MIT",
   "dependencies": {
-    "chalk": "^4.1.2",
-    "openai": "^4.98.0",
-    "esbuild": "^0.25.4",
-    "typescript": "^5.8.3",
-    "rimraf": "^6.0.1"
-  },
-  "devDependencies": {
+    "@types/chalk": "^2.2.4",
     "@types/jest": "^29.5.14",
     "@types/node": "^22.15.17",
+    "chalk": "^4.1.2",
+    "esbuild": "^0.25.4",
+    "openai": "^4.98.0",
+    "rimraf": "^6.0.1",
+    "typescript": "^5.8.3"
+  },
+  "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^8.32.0",
     "@typescript-eslint/parser": "^8.32.0",
     "eslint": "^9.26.0",
