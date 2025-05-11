@@ -43,6 +43,25 @@ describe('GitManager', () => {
       (execSync as jest.Mock).mockReturnValueOnce('');
       expect(() => GitManager.getStagedChanges()).toThrow(GitError);
     });
+    it('should handle files with too many changes', () => {
+      (execSync as jest.Mock).mockImplementation((cmd: string) => {
+        if (cmd.includes('git diff --cached --name-only')) return 'large-file.txt';
+        if (cmd.includes('git diff --cached -- "large-file.txt"')) {
+          // Create a string with more than MAX_CHANGES lines
+          return Array(600).fill('+line').join('\n');
+        }
+        return '';
+      });
+      const result = GitManager.getStagedChanges();
+      expect(result).toContain('Too many changes to display');
+      expect(result).toContain('600 lines');
+    });
+    it('should throw original error if not Error instance', () => {
+      (execSync as jest.Mock).mockImplementation(() => {
+        throw 'string error';
+      });
+      expect(() => GitManager.getStagedChanges()).toThrow('string error');
+    });
   });
 
   describe('commit', () => {
@@ -68,6 +87,29 @@ describe('GitManager', () => {
         expect.stringContaining('git commit -m'),
         expect.objectContaining({ stdio: 'inherit' })
       );
+    });
+    it('should write error output to stdout and stderr', () => {
+      const mockStdout = Buffer.from('stdout error');
+      const mockStderr = Buffer.from('stderr error');
+      const mockError = {
+        stdout: mockStdout,
+        stderr: mockStderr,
+        message: 'commit failed',
+      };
+
+      (execSync as jest.Mock).mockImplementation(() => {
+        throw mockError;
+      });
+
+      const stdoutSpy = jest.spyOn(process.stdout, 'write');
+      const stderrSpy = jest.spyOn(process.stderr, 'write');
+
+      expect(() => GitManager.commit('msg')).toThrow(GitError);
+      expect(stdoutSpy).toHaveBeenCalledWith(mockStdout.toString());
+      expect(stderrSpy).toHaveBeenCalledWith(mockStderr.toString());
+
+      stdoutSpy.mockRestore();
+      stderrSpy.mockRestore();
     });
   });
 });
