@@ -9,10 +9,10 @@
   },
   "scripts": {
     "build": "tsc && esbuild src/cli.ts --bundle --platform=node --format=cjs --outfile=dist/cli.cjs",
-    "start": "node dist/cli.js",
-    "dev": "ts-node src/cli.ts",
+    "dev": "node dist/cli.cjs",
+    "predev": "yarn --silent build",
     "clean": "rimraf dist",
-    "prebuild": "npm run clean",
+    "prebuild": "yarn clean",
     "lint": "eslint 'src/**/*.{ts,tsx}'",
     "lint:fix": "eslint 'src/**/*.{ts,tsx}' --fix",
     "format": "prettier --write \"src/**/*.ts\"",
