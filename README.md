@@ -6,7 +6,7 @@ A command-line tool that helps you write clear, conventional git commit messages
 
 [![CI](https://github.com/SaharAvr/git-commitai/actions/workflows/ci.yml/badge.svg)](https://github.com/SaharAvr/git-commitai/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/SaharAvr/git-commitai/branch/main/graph/badge.svg)](https://codecov.io/gh/SaharAvr/git-commitai)
-[![npm version](https://badge.fury.io/js/git-commitai.svg)](https://badge.fury.io/js/git-commitai)
+[![npm version](https://badge.fury.io/js/git-commitai-cli.svg)](https://badge.fury.io/js/git-commitai-cli)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## ✨ Features
