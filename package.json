@@ -28,7 +28,7 @@
     "cli",
     "conventional-commits"
   ],
-  "author": "",
+  "author": "Sahar Avraham",
   "license": "MIT",
   "dependencies": {
     "chalk": "^4.1.2",
