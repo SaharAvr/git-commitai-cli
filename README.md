@@ -2,7 +2,7 @@
 
 A command-line tool that helps you write clear, conventional git commit messages. It uses OpenAI to suggest commit messages that follow the Conventional Commits specification.
 
-![git-commitai demo](/assets/git-commitai.gif)
+![git-commitai demo](https://raw.githubusercontent.com/SaharAvr/git-commitai/main/assets/git-commitai.gif)
 
 [![CI](https://github.com/SaharAvr/git-commitai/actions/workflows/ci.yml/badge.svg)](https://github.com/SaharAvr/git-commitai/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/SaharAvr/git-commitai/branch/main/graph/badge.svg)](https://codecov.io/gh/SaharAvr/git-commitai)
@@ -104,4 +104,4 @@ yarn lint
 
 ## 📄 License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details. 
+This project is licensed under the MIT License. See the [LICENSE](https://raw.githubusercontent.com/SaharAvr/git-commitai/main/LICENSE) file for details. 
