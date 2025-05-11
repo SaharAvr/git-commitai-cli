@@ -13,6 +13,7 @@
     "predev": "npm run build --silent",
     "clean": "rimraf dist",
     "prebuild": "npm run clean",
+    "postinstall": "npm run build || true",
     "lint": "eslint 'src/**/*.{ts,tsx}'",
     "lint:fix": "eslint 'src/**/*.{ts,tsx}' --fix",
     "format": "prettier --write \"src/**/*.ts\"",
