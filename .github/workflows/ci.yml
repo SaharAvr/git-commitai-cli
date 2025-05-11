@@ -1,0 +1,120 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [20.x]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'yarn'
+
+    - name: Install dependencies
+      run: yarn install --frozen-lockfile
+
+    - name: Lint
+      run: yarn lint
+      continue-on-error: false
+
+    - name: Build
+      run: yarn build
+      continue-on-error: false
+
+    - name: Test
+      run: yarn test
+      continue-on-error: false
+    
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v5
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        fail_ci_if_error: true 
+
+  create-tag:
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Get current version
+        id: get_version
+        run: echo "VERSION=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+
+      - name: Check if version changed
+        id: check_version
+        run: |
+          CURRENT_VERSION=${{ steps.get_version.outputs.VERSION }}
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+          LATEST_VERSION=${LATEST_TAG#v}
+          
+          if [ "$CURRENT_VERSION" != "$LATEST_VERSION" ]; then
+            echo "version_changed=true" >> $GITHUB_OUTPUT
+            echo "new_tag=v$CURRENT_VERSION" >> $GITHUB_OUTPUT
+          else
+            echo "version_changed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create and push tag
+        if: steps.check_version.outputs.version_changed == 'true'
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git tag ${{ steps.check_version.outputs.new_tag }}
+          git push origin ${{ steps.check_version.outputs.new_tag }}
+
+  publish:
+    needs: [build, create-tag]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Check published version
+        id: check-version
+        run: |
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          PUBLISHED_VERSION=$(npm view git-commitai-cli version)
+          if [ "$CURRENT_VERSION" = "$PUBLISHED_VERSION" ] || [ "$(echo -e "$CURRENT_VERSION\n$PUBLISHED_VERSION" | sort -V | head -n1)" = "$CURRENT_VERSION" ]; then
+            echo "Current version ($CURRENT_VERSION) is the same or lower than the published version ($PUBLISHED_VERSION). Exiting."
+            echo "should_publish=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          echo "should_publish=true" >> $GITHUB_OUTPUT
+
+      - name: Publish to npm
+        if: steps.check-version.outputs.should_publish == 'true'
+        run: npm publish --access=public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

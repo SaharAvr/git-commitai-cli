@@ -1,0 +1,57 @@
+{
+  "name": "git-commitai-cli",
+  "version": "1.0.0",
+  "description": "AI-powered git commit message generator",
+  "main": "dist/cli.js",
+  "type": "module",
+  "bin": {
+    "git-commitai": "./dist/cli.cjs"
+  },
+  "scripts": {
+    "build": "tsc && esbuild src/cli.ts --bundle --platform=node --format=cjs --outfile=dist/cli.cjs",
+    "start": "node dist/cli.js",
+    "dev": "ts-node src/cli.ts",
+    "clean": "rimraf dist",
+    "prebuild": "npm run clean",
+    "lint": "eslint 'src/**/*.{ts,tsx}'",
+    "lint:fix": "eslint 'src/**/*.{ts,tsx}' --fix",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
+  },
+  "keywords": [
+    "git",
+    "commit",
+    "ai",
+    "openai",
+    "cli",
+    "conventional-commits"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "chalk": "^4.1.2",
+    "openai": "^4.98.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.14",
+    "@types/node": "^22.15.17",
+    "@typescript-eslint/eslint-plugin": "^8.32.0",
+    "@typescript-eslint/parser": "^8.32.0",
+    "esbuild": "^0.25.4",
+    "eslint": "^9.26.0",
+    "eslint-config-prettier": "^10.1.5",
+    "eslint-plugin-prettier": "^5.4.0",
+    "husky": "^9.1.7",
+    "jest": "^29.7.0",
+    "prettier": "^3.5.3",
+    "rimraf": "^6.0.1",
+    "ts-jest": "^29.3.2",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}

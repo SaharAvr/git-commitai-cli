@@ -1,0 +1,17 @@
+set -e
+
+# Check if there are staged changes
+if ! git diff --cached --quiet; then
+  # Staged changes exist, proceed with linting and tests
+  echo "Running linting..."
+  yarn lint || exit 1
+  echo "Running tests..."
+  yarn test || exit 1
+else
+  # No staged changes, exit early
+  echo "No staged changes found. Use 'git add' first."
+  exit 0
+fi
+
+# Always return success
+exit 0 
