@@ -9,9 +9,9 @@ export class OpenAIError extends Error {
 }
 
 export class OpenAIManager {
-  private static readonly MAX_ATTEMPTS = 3;
-  private static readonly MAX_TOKENS = 100;
-  private static readonly TEMPERATURE = 0.7;
+  public static readonly MAX_ATTEMPTS = 3;
+  public static readonly MAX_TOKENS = 100;
+  public static readonly TEMPERATURE = 0.7;
 
   constructor(private apiKey: string) {
     if (!apiKey) {
@@ -45,7 +45,7 @@ export class OpenAIManager {
     let prevMessage = '';
     let attempts = 0;
 
-    while (true) {
+    for (attempts = 0; attempts < OpenAIManager.MAX_ATTEMPTS; attempts++) {
       let promptText = 'Please suggest a git commit message following Conventional Commits format.';
       if (prefix) {
         promptText += ` The message MUST start with: ${prefix}`;
@@ -69,39 +69,80 @@ export class OpenAIManager {
 
       try {
         const response = await this.makeRequest(requestBody);
+
+        if (
+          !response ||
+          !Array.isArray(response.choices) ||
+          !response.choices[0] ||
+          !response.choices[0].message ||
+          typeof response.choices[0].message.content !== 'string'
+        ) {
+          throw new OpenAIError('Failed to generate commit message');
+        }
+
         const message = response.choices[0].message.content;
 
         // Validate the message format
         if (prefix) {
-          if (message.startsWith(prefix)) {
-            if (message !== prevMessage || attempts >= OpenAIManager.MAX_ATTEMPTS) {
-              return message;
-            }
+          if (!message.startsWith(prefix)) {
+            console.log('Generated message:', message);
+            console.log("Generated message doesn't start with required prefix. Retrying...");
+            prevMessage = message;
+            continue;
           }
         } else {
-          if (/^(feat|fix|docs|style|refactor|perf|test|chore)/.test(message)) {
-            if (message !== prevMessage || attempts >= OpenAIManager.MAX_ATTEMPTS) {
-              return message;
-            }
+          if (!/^(feat|fix|docs|style|refactor|perf|test|chore)/.test(message)) {
+            console.log('Generated message:', message);
+            console.log(
+              "Generated message doesn't follow Conventional Commits format. Retrying..."
+            );
+            prevMessage = message;
+            continue;
           }
         }
 
-        console.log('Generated message:', message);
-        console.log("Generated message doesn't follow Conventional Commits format. Retrying...");
+        // Process the message using a testable method
+        const processResult = this.processValidMessage(message, prevMessage, attempts);
+        if (processResult.shouldReturn) {
+          return processResult.message;
+        }
 
         prevMessage = message;
-        attempts++;
-
-        if (attempts >= OpenAIManager.MAX_ATTEMPTS) {
-          throw new OpenAIError(
-            `Failed to generate a valid commit message after ${OpenAIManager.MAX_ATTEMPTS} attempts`
-          );
-        }
       } catch (error) {
         throw new OpenAIError(
           error instanceof Error ? error.message : 'Failed to generate commit message'
         );
       }
     }
+
+    // Should never reach here, but throw as a safeguard
+    throw new OpenAIError('Failed to generate commit message');
+  }
+
+  // Extracted method to make testing easier
+  public handleSameMessageRetry(message: string): void {
+    console.log('Generated message:', message);
+    console.log('Generated message is the same as previous. Retrying...');
+  }
+
+  // Process message decisions in a testable way
+  public processValidMessage(
+    message: string,
+    prevMessage: string,
+    attempts: number
+  ): { shouldReturn: boolean; message: string } {
+    // Check if we should return the message
+    if (message !== prevMessage) {
+      return { shouldReturn: true, message };
+    }
+
+    // If we've reached the last attempt, return the message
+    if (attempts === OpenAIManager.MAX_ATTEMPTS - 1) {
+      return { shouldReturn: true, message };
+    }
+
+    // Handle retry logic
+    this.handleSameMessageRetry(message);
+    return { shouldReturn: false, message };
   }
 }
