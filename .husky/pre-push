@@ -1,6 +1,6 @@
 set -e
 
 echo "Running linting..."
-yarn lint || exit 1
+npm run lint || exit 1
 echo "Running tests..."
-yarn test || exit 1 
+npm test || exit 1 

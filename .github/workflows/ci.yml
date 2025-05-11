@@ -24,21 +24,21 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: ${{ matrix.node-version }}
-        cache: 'yarn'
+        cache: 'npm'
 
     - name: Install dependencies
-      run: yarn install --frozen-lockfile
+      run: npm ci
 
     - name: Lint
-      run: yarn lint
+      run: npm run lint
       continue-on-error: false
 
     - name: Build
-      run: yarn build
+      run: npm run build
       continue-on-error: false
 
     - name: Test
-      run: yarn test
+      run: npm test
       continue-on-error: false
     
     - name: Upload coverage reports to Codecov

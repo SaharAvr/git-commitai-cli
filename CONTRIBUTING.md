@@ -46,7 +46,6 @@ If you have a suggestion for a new feature or enhancement, please include as muc
 ### Prerequisites
 
 - Node.js (v16 or higher)
-- Yarn package manager
 - Git
 
 ### Getting Started
@@ -62,7 +61,7 @@ If you have a suggestion for a new feature or enhancement, please include as muc
    ```
 4. Install dependencies:
    ```bash
-   yarn install
+   npm install
    ```
 
 ### Development Workflow
@@ -74,15 +73,15 @@ If you have a suggestion for a new feature or enhancement, please include as muc
 2. Make your changes
 3. Run tests:
    ```bash
-   yarn test
+   npm test
    ```
 4. Run linting:
    ```bash
-   yarn lint
+   npm run lint
    ```
 5. Build the project:
    ```bash
-   yarn build
+   npm run build
    ```
 6. Commit your changes following the Conventional Commits specification
 7. Push to your fork:
@@ -94,14 +93,14 @@ If you have a suggestion for a new feature or enhancement, please include as muc
 ### Code Style
 
 - We use ESLint and Prettier for code formatting
-- Run `yarn lint` to check for style issues
-- Run `yarn format` to automatically fix style issues
+- Run `npm run lint` to check for style issues
+- Run `npm run format` to automatically fix style issues
 
 ### Testing
 
 - Write tests for new features and bug fixes
-- Run `yarn test` to execute the test suite
-- Run `yarn test:coverage` to check test coverage
+- Run `npm test` to execute the test suite
+- Run `npm run test:coverage` to check test coverage
 - Maintain or improve the current test coverage
 
 ### Documentation

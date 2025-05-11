@@ -4,9 +4,9 @@ set -e
 if ! git diff --cached --quiet; then
   # Staged changes exist, proceed with linting and tests
   echo "Running linting..."
-  yarn lint || exit 1
+  npm run lint || exit 1
   echo "Running tests..."
-  yarn test || exit 1
+  npm test || exit 1
 else
   # No staged changes, exit early
   echo "No staged changes found. Use 'git add' first."

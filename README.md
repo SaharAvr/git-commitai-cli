@@ -23,9 +23,6 @@ A command-line tool that helps you write clear, conventional git commit messages
 ```bash
 # Using npm
 npm install -g git-commitai-cli
-
-# Using yarn
-yarn global add git-commitai-cli
 ```
 
 ## ⚙️ Setup
@@ -90,16 +87,16 @@ The API key is stored in `~/.git-commitai/config`. You can edit this file manual
 git clone https://github.com/SaharAvr/git-commitai.git
 
 # Install dependencies
-yarn install
+npm install
 
 # Build the project
-yarn build
+npm run build
 
 # Run tests
-yarn test
+npm test
 
 # Run linting
-yarn lint
+npm run lint
 ```
 
 ## 📄 License
