@@ -14,7 +14,8 @@ export class GitError extends Error {
 }
 
 export class GitManager {
-  private static readonly MAX_CHANGES = 500;
+  private static readonly MAX_CHANGES_PER_FILE = 500;
+  private static readonly MAX_TOTAL_CHANGES = 5000;
 
   public static processCommitArgs(args: string[]): CommitArgs {
     const processedArgs: string[] = [];
@@ -50,15 +51,37 @@ export class GitManager {
       }
 
       let allChanges = '';
+      let totalChangeCount = 0;
+      let truncatedFiles = 0;
+
+      // First pass: count total changes and identify large files
       for (const file of files) {
         const fileChanges = execSync(`git diff --cached -- "${file}"`).toString();
         const changeCount = fileChanges.split('\n').length;
+        totalChangeCount += changeCount;
 
-        if (changeCount > this.MAX_CHANGES) {
+        if (changeCount > this.MAX_CHANGES_PER_FILE) {
+          truncatedFiles++;
           allChanges += `[File: ${file} - Too many changes to display (${changeCount} lines)]\n`;
         } else {
           allChanges += `[File: ${file}]\n${fileChanges}\n\n`;
         }
+
+        // If we exceed the max total changes, stop processing more files in detail
+        if (totalChangeCount > this.MAX_TOTAL_CHANGES) {
+          const remainingFiles = files.length - (files.indexOf(file) + 1);
+          if (remainingFiles > 0) {
+            allChanges += `\n[${remainingFiles} more files not shown due to size constraints]\n`;
+            break;
+          }
+        }
+      }
+
+      // Add summary if files were truncated
+      if (truncatedFiles > 0) {
+        allChanges =
+          `[${truncatedFiles} file(s) exceeded maximum line count and were truncated]\n\n` +
+          allChanges;
       }
 
       return `Files changed:\n${files.join('\n')}\n\nChanges:\n${allChanges}`;
