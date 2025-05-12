@@ -1,6 +1,11 @@
 import { execSync } from 'child_process';
 import { CommitArgs } from '../types';
 
+export enum GitStatus {
+  /* eslint-disable no-unused-vars */
+  NO_STAGED_CHANGES = 'NO_STAGED_CHANGES',
+}
+
 export class GitError extends Error {
   constructor(message: string) {
     super(message);
@@ -36,12 +41,12 @@ export class GitManager {
     return { prefix, args: processedArgs };
   }
 
-  public static getStagedChanges(): string {
+  public static getStagedChanges(): string | GitStatus {
     try {
       const files = execSync('git diff --cached --name-only').toString().trim().split('\n');
 
       if (files.length === 0 || (files.length === 1 && files[0] === '')) {
-        throw new GitError("No staged changes found. Use 'git add' first.");
+        return GitStatus.NO_STAGED_CHANGES;
       }
 
       let allChanges = '';

@@ -3,7 +3,7 @@
 import readline from 'readline';
 import chalk from 'chalk';
 import { ConfigManager } from './config';
-import { GitManager } from './git';
+import { GitManager, GitStatus } from './git';
 import { OpenAIManager } from './openai';
 
 const rl = readline.createInterface({
@@ -30,6 +30,16 @@ async function promptCommitMessage(
     const apiKey = configManager.getApiKey();
     const openai = new OpenAIManager(apiKey);
     const changes = GitManager.getStagedChanges();
+
+    if (changes === GitStatus.NO_STAGED_CHANGES) {
+      console.log(chalk.yellow('\n📋 No changes staged for commit'));
+      console.log('Please stage your changes before using git commitai:');
+      console.log(`  ${chalk.cyan('git add <file>')}`);
+      console.log(`  ${chalk.cyan('git add .')}`);
+      rl.close();
+      return;
+    }
+
     const { prefix, args } = GitManager.processCommitArgs(process.argv.slice(2));
 
     const suggestedMsg = await openai.generateCommitMessage(changes, prefix, previousMessages);
@@ -107,8 +117,24 @@ async function checkAndPromptOpenAIKey(): Promise<void> {
       await configManager.saveApiKey(key);
       console.log('\n✅ API key validated and saved successfully.');
 
-      const { args } = GitManager.processCommitArgs(process.argv.slice(2));
-      await promptCommitMessage([], args);
+      try {
+        const changes = GitManager.getStagedChanges();
+        if (changes === GitStatus.NO_STAGED_CHANGES) {
+          console.log(chalk.green('\n✓ git commitai is configured successfully'));
+          console.log('To create your first AI-generated commit:');
+          console.log(`1. ${chalk.cyan('git add')} your modified files`);
+          console.log(`2. Run ${chalk.cyan('git commitai')} to generate a commit message`);
+          rl.close();
+          return;
+        }
+
+        const { args } = GitManager.processCommitArgs(process.argv.slice(2));
+        await promptCommitMessage([], args);
+      } catch (error) {
+        console.error('Error:', error instanceof Error ? error.message : 'Unknown error');
+        rl.close();
+        process.exit(1);
+      }
     });
   } else {
     const { args } = GitManager.processCommitArgs(process.argv.slice(2));

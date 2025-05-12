@@ -1,4 +1,4 @@
-import { GitManager, GitError } from './index';
+import { GitManager, GitError, GitStatus } from './index';
 import { execSync } from 'child_process';
 
 jest.mock('child_process', () => ({
@@ -39,9 +39,9 @@ describe('GitManager', () => {
       expect(result).toContain('file2.js');
       expect(result).toContain('Changes:');
     });
-    it('should throw if no staged changes', () => {
+    it('should return NO_STAGED_CHANGES when no changes are staged', () => {
       (execSync as jest.Mock).mockReturnValueOnce('');
-      expect(() => GitManager.getStagedChanges()).toThrow(GitError);
+      expect(GitManager.getStagedChanges()).toBe(GitStatus.NO_STAGED_CHANGES);
     });
     it('should handle files with too many changes', () => {
       (execSync as jest.Mock).mockImplementation((cmd: string) => {
@@ -61,6 +61,13 @@ describe('GitManager', () => {
         throw 'string error';
       });
       expect(() => GitManager.getStagedChanges()).toThrow('string error');
+    });
+    it('should throw GitError for Error instance', () => {
+      (execSync as jest.Mock).mockImplementation(() => {
+        throw new Error('Command failed');
+      });
+      expect(() => GitManager.getStagedChanges()).toThrow(GitError);
+      expect(() => GitManager.getStagedChanges()).toThrow('Failed to get staged changes');
     });
   });
 
