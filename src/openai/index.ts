@@ -23,7 +23,7 @@ export class OpenAIManager {
     try {
       const openai = new OpenAI({ apiKey: this.apiKey });
       const response = await openai.chat.completions.create({
-        model: 'gpt-4',
+        model: 'gpt-4.1-nano',
         messages: [{ role: 'user', content: requestBody.messages[0].content }],
         max_tokens: OpenAIManager.MAX_TOKENS,
         temperature: OpenAIManager.TEMPERATURE,
