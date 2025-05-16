@@ -115,15 +115,15 @@ async function checkAndPromptOpenAIKey(): Promise<void> {
       }
 
       await configManager.saveApiKey(key);
-      console.log('\n✅ API key validated and saved successfully.');
+      console.log(chalk.green('✅ API key validated and saved successfully.'));
 
       try {
         const changes = GitManager.getStagedChanges();
         if (changes === GitStatus.NO_STAGED_CHANGES) {
-          console.log(chalk.green('\n✓ git commitai is configured successfully'));
-          console.log('To create your first AI-generated commit:');
+          console.log('\nTo create your first AI-generated commit:');
           console.log(`1. ${chalk.cyan('git add')} your modified files`);
           console.log(`2. Run ${chalk.cyan('git commitai')} to generate a commit message`);
+          console.log();
           rl.close();
           return;
         }
