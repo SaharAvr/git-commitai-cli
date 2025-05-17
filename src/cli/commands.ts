@@ -4,14 +4,7 @@ import { GitManager, GitStatus } from '../git';
 import { ConfigManager } from '../config';
 import { AIManager } from '../ai';
 import { displayHelpMessage, displaySettingsHeader } from './messages';
-
-// Import dynamically to avoid circular dependencies
-let promptFunctions: any = null;
-
-// This will be called from index.ts to break circular dependencies
-export function setPromptFunctions(fns: any): void {
-  promptFunctions = fns;
-}
+import { promptForProvider, promptForDefaultProvider } from './prompt';
 
 /**
  * Handles the help command
@@ -60,11 +53,11 @@ export function showSettings(rl: any): void {
       switch (option) {
         case '1':
           console.log();
-          await promptFunctions.promptForProvider();
+          await promptForProvider();
           break;
         case '2':
           console.log();
-          await promptFunctions.promptForDefaultProvider();
+          await promptForDefaultProvider();
           break;
         case '3':
           rl.close();
@@ -88,12 +81,7 @@ export async function promptCommitMessage(
 
     if (!apiKey) {
       console.log(chalk.yellow(`\nNo API key found for ${provider}. Please set up your API key.`));
-      if (promptFunctions) {
-        await promptFunctions.promptForProvider();
-      } else {
-        console.log('Unable to prompt for provider. Please run the settings command.');
-        rl.close();
-      }
+      await promptForProvider();
       return;
     }
 
@@ -129,22 +117,10 @@ export async function promptCommitMessage(
         GitManager.commit(suggestedMsg, [...gitArgs, ...args]);
         console.log();
         rl.close();
-      } catch (error: any) {
-        // Print all available error output from execSync errors
-        if (error && typeof error === 'object') {
-          if ('stdout' in error && error.stdout) {
-            process.stdout.write(error.stdout.toString());
-          }
-          if ('stderr' in error && error.stderr) {
-            process.stderr.write(error.stderr.toString());
-          }
-        }
-        // Print error message if nothing else
-        if (error instanceof Error && error.message) {
-          process.stderr.write(error.message + '\n');
-        }
+      } catch {
+        // Exit cleanly without showing error messages
         rl.close();
-        process.exit(1);
+        return;
       }
     } else {
       // Regenerate a new commit message, passing the last three messages
@@ -152,9 +128,9 @@ export async function promptCommitMessage(
       const newPreviousMessages = [...previousMessages, suggestedMsg].slice(-3);
       await promptCommitMessage(rl, newPreviousMessages, gitArgs);
     }
-  } catch (error) {
-    console.error('Error:', error instanceof Error ? error.message : 'Unknown error');
+  } catch {
+    // Exit cleanly without showing error messages
     rl.close();
-    process.exit(1);
+    return;
   }
 }

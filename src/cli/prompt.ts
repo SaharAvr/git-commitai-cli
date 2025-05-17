@@ -91,7 +91,8 @@ export async function promptForApiKey(
 
     if (!validationResult.isValid) {
       console.error(`\n❌ Error: ${validationResult.errorMessage}`);
-      process.exit(1);
+      rl.close();
+      return;
     }
 
     await configManager.saveApiKey(apiKey, provider);
@@ -119,15 +120,13 @@ export async function promptForApiKey(
         console.log('Ready to generate commit messages');
         rl.close();
       }
-    } catch (error) {
-      console.error('Error:', error instanceof Error ? error.message : 'Unknown error');
+    } catch {
       rl.close();
-      process.exit(1);
+      return;
     }
-  } catch (error) {
-    console.error('\n❌ Error:', error instanceof Error ? error.message : 'Unknown error');
+  } catch {
     rl.close();
-    process.exit(1);
+    return;
   }
 }
 

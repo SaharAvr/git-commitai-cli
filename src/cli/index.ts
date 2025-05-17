@@ -6,17 +6,31 @@ import { ConfigManager } from '../config';
 import { GitManager } from '../git';
 
 // Import all CLI components
-import { showHelp, showSettings, promptCommitMessage, setPromptFunctions } from './commands';
-import { promptForProvider, promptForDefaultProvider, setPromptCommitMessage } from './prompt';
-
-// Fix circular dependencies by registering functions
-setPromptCommitMessage(promptCommitMessage);
-setPromptFunctions({ promptForProvider, promptForDefaultProvider });
+import { showHelp, showSettings, promptCommitMessage } from './commands';
+import { promptForProvider } from './prompt';
 
 // Create readline interface
 const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout,
+});
+
+// Handle Ctrl+C gracefully
+process.on('SIGINT', () => {
+  rl.close();
+  process.exit(0);
+});
+
+// Handle ExitPromptError properly
+process.on('uncaughtException', (error) => {
+  if (error instanceof Error && error.name === 'ExitPromptError') {
+    // Gracefully exit when the prompt is cancelled
+    process.exit(0);
+  } else {
+    // Re-throw other errors
+    console.error('\nAn unexpected error occurred:', error);
+    process.exit(1);
+  }
 });
 
 /**
