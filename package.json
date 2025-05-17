@@ -14,9 +14,9 @@
   ],
   "scripts": {
     "clean": "rimraf dist",
-    "build": "esbuild src/cli.ts --bundle --platform=node --format=cjs --outfile=dist/cli.cjs",
+    "build": "esbuild src/cli.ts --bundle --platform=node --format=cjs --outfile=dist/cli.cjs --sourcemap",
     "prebuild": "npm run clean",
-    "dev": "node dist/cli.cjs",
+    "dev": "NODE_ENV=development node --enable-source-maps dist/cli.cjs",
     "predev": "npm run build --silent",
     "test": "jest",
     "test:watch": "jest --watch",
