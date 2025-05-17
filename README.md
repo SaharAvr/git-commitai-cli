@@ -1,6 +1,6 @@
 # git commitai
 
-A command-line tool that helps you write clear, conventional git commit messages. It uses OpenAI to suggest commit messages that follow the Conventional Commits specification.
+A command-line tool that helps you write clear, conventional git commit messages. It uses AI to suggest commit messages that follow the Conventional Commits specification.
 
 ![git-commitai demo](https://raw.githubusercontent.com/SaharAvr/git-commitai/main/assets/git-commitai.gif)
 
@@ -11,10 +11,13 @@ A command-line tool that helps you write clear, conventional git commit messages
 
 ## ✨ Features
 
-- Generates commit messages using OpenAI
+- Generates commit messages using multiple AI providers:
+  - OpenAI (GPT)
+  - Google (Gemini)
+  - Anthropic (Claude)
 - Follows the Conventional Commits specification
 - Supports message regeneration
-- Stores your API key securely
+- Stores your API keys securely
 - Allows specifying commit prefixes
 - Passes through git commit arguments
 
@@ -27,8 +30,11 @@ npm install -g git-commitai-cli
 
 ## ⚙️ Setup
 
-1. Get your OpenAI API key from [OpenAI Platform](https://platform.openai.com/api-keys)
-2. Run `git commitai` and follow the prompts to save your API key
+1. Get your API key from one of the supported providers:
+   - [OpenAI Platform](https://platform.openai.com/api-keys)
+   - [Google AI Studio](https://makersuite.google.com/app/apikey)
+   - [Anthropic Console](https://console.anthropic.com/settings/keys)
+2. Run `git commitai` and follow the prompts to select a provider and save your API key
 
 ## 🚀 Usage
 
@@ -44,6 +50,9 @@ git commitai --no-verify
 
 # Use a specific prefix
 git commitai "feat"
+
+# Change AI provider or other settings
+git commitai settings
 ```
 
 ## 📝 Commit Message Format
@@ -70,7 +79,7 @@ Types include:
 
 ## 🛠️ Configuration
 
-The API key is stored in `~/.git-commitai/config`. You can edit this file manually if needed.
+The API keys are stored in `~/.git-commitai/config`. You can edit this file manually if needed.
 
 ## 🤝 Contributing
 
