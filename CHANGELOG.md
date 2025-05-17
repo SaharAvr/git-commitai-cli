@@ -5,14 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [2.0.0] - 2025-05-17
 
 ### Added
-- Integration of multiple AI providers (OpenAI, Google, Anthropic) for generating commit messages
-- Enhanced CLI functionality
+- Multi-provider support for AI-generated commit messages:
+  - OpenAI (GPT)
+  - Google (Gemini)
+  - Anthropic (Claude)
+- Settings command for easy provider selection and configuration
+- Improved provider-specific prompt templates for better commit messages
 
 ### Changed
+- Complete architecture refactoring to support multiple AI providers
+- Enhanced CLI with provider selection interface
+- Updated configuration storage to handle multiple API keys
 - Added source maps to build and dev scripts
+
+### Fixed
+- Improved error handling for provider-specific API failures
+- Better validation for API keys across all providers
 
 ## [1.5.1] - 2025-05-16
 
