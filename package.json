@@ -1,6 +1,6 @@
 {
   "name": "git-commitai-cli",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "AI-powered git commit message generator",
   "main": "dist/cli.js",
   "type": "module",
