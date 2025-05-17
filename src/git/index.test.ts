@@ -48,13 +48,15 @@ describe('GitManager', () => {
         if (cmd.includes('git diff --cached --name-only')) return 'large-file.txt';
         if (cmd.includes('git diff --cached -- "large-file.txt"')) {
           // Create a string with more than MAX_CHANGES_PER_FILE lines
-          return Array(600).fill('+line').join('\n');
+          return Array(GitManager.MAX_CHANGES_PER_FILE + 1)
+            .fill('+line')
+            .join('\n');
         }
         return '';
       });
       const result = GitManager.getStagedChanges();
       expect(result).toContain('Too many changes to display');
-      expect(result).toContain('600 lines');
+      expect(result).toContain(`${GitManager.MAX_CHANGES_PER_FILE + 1} lines`);
       expect(result).toContain('1 file(s) exceeded maximum line count');
     });
     it('should handle total changes exceeding maximum', () => {
@@ -63,19 +65,29 @@ describe('GitManager', () => {
           return 'file1.txt\nfile2.txt\nfile3.txt\nfile4.txt\nfile5.txt';
         }
         if (cmd.includes('git diff --cached -- "file1.txt"')) {
-          return Array(1500).fill('+line').join('\n');
+          return Array(GitManager.MAX_TOTAL_CHANGES + 1)
+            .fill('+line')
+            .join('\n');
         }
         if (cmd.includes('git diff --cached -- "file2.txt"')) {
-          return Array(1500).fill('+line').join('\n');
+          return Array(GitManager.MAX_TOTAL_CHANGES + 1)
+            .fill('+line')
+            .join('\n');
         }
         if (cmd.includes('git diff --cached -- "file3.txt"')) {
-          return Array(1500).fill('+line').join('\n');
+          return Array(GitManager.MAX_TOTAL_CHANGES + 1)
+            .fill('+line')
+            .join('\n');
         }
         if (cmd.includes('git diff --cached -- "file4.txt"')) {
-          return Array(1500).fill('+line').join('\n');
+          return Array(GitManager.MAX_TOTAL_CHANGES + 1)
+            .fill('+line')
+            .join('\n');
         }
         if (cmd.includes('git diff --cached -- "file5.txt"')) {
-          return Array(1500).fill('+line').join('\n');
+          return Array(GitManager.MAX_TOTAL_CHANGES + 1)
+            .fill('+line')
+            .join('\n');
         }
         return '';
       });

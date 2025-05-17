@@ -1,7 +1,8 @@
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
-import { ConfigManager } from './index';
+import { ConfigManager, getConfigFilePath } from './index';
+import { ApiProvider } from '../types';
 
 // Mock modules
 jest.mock('fs');
@@ -12,7 +13,14 @@ describe('ConfigManager', () => {
   const mockHomedir = '/mock/home';
   const mockConfigDir = '/mock/home/.git-commitai';
   const mockConfigFile = '/mock/home/.git-commitai/config';
-  const mockConfig = { OPENAI_API_KEY: 'test-key-123' };
+  const mockDevConfigFile = '/mock/home/.git-commitai/config.dev';
+  const mockConfig = {
+    apiKeys: {
+      [ApiProvider.OPENAI]: 'test-key-123',
+      [ApiProvider.GOOGLE]: 'gemini-key-456',
+    },
+    defaultProvider: ApiProvider.OPENAI,
+  };
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -24,6 +32,9 @@ describe('ConfigManager', () => {
       }
       if (args[0] === mockConfigDir && args[1] === 'config') {
         return mockConfigFile;
+      }
+      if (args[0] === mockConfigDir && args[1] === 'config.dev') {
+        return mockDevConfigFile;
       }
       return args.join('/');
     });
@@ -48,7 +59,13 @@ describe('ConfigManager', () => {
 
       expect(fs.existsSync).toHaveBeenCalled();
       expect(fs.readFileSync).toHaveBeenCalled();
-      expect(configManager.getApiKey()).toBe(mockConfig.OPENAI_API_KEY);
+      expect(configManager.getApiKey(ApiProvider.OPENAI)).toBe(
+        mockConfig.apiKeys[ApiProvider.OPENAI]
+      );
+      expect(configManager.getApiKey(ApiProvider.GOOGLE)).toBe(
+        mockConfig.apiKeys[ApiProvider.GOOGLE]
+      );
+      expect(configManager.getDefaultProvider()).toBe(ApiProvider.OPENAI);
     });
 
     it('should handle JSON parse errors', () => {
@@ -93,17 +110,259 @@ describe('ConfigManager', () => {
 
       consoleSpy.mockRestore();
     });
+
+    it('should initialize apiKeys if missing in the loaded config', () => {
+      // Setup mock for config without apiKeys property
+      (fs.existsSync as jest.Mock).mockReturnValueOnce(true);
+      (fs.readFileSync as jest.Mock).mockReturnValueOnce(
+        JSON.stringify({
+          defaultProvider: ApiProvider.OPENAI,
+        })
+      );
+
+      const configManager = new ConfigManager();
+
+      // The apiKeys should be initialized as an empty object
+      expect(configManager.getApiKeys()).toEqual({});
+    });
+  });
+
+  describe('development mode', () => {
+    let originalNodeEnv: string | undefined;
+    const CONFIG_DIR = '/mock/config/dir';
+
+    beforeEach(() => {
+      originalNodeEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = 'development';
+
+      // Mock the needed functions
+      (path.join as jest.Mock).mockImplementation((...args) => {
+        if (args[1] === 'config.dev') {
+          return CONFIG_DIR + '/config.dev';
+        }
+        if (args[1] === 'config') {
+          return CONFIG_DIR + '/config';
+        }
+        return CONFIG_DIR;
+      });
+    });
+
+    afterEach(() => {
+      process.env.NODE_ENV = originalNodeEnv;
+    });
+
+    it('should use development config file when NODE_ENV=development', () => {
+      const configPath = getConfigFilePath();
+      expect(configPath).toContain('config.dev');
+
+      // Change to production and verify it changes
+      process.env.NODE_ENV = 'production';
+      const prodConfigPath = getConfigFilePath();
+      expect(prodConfigPath).toContain('config');
+      expect(prodConfigPath).not.toContain('config.dev');
+    });
   });
 
   describe('getApiKey', () => {
-    it('should return the API key from config', () => {
+    it('should return the API key for the default provider', () => {
       // Setup mock
       (fs.existsSync as jest.Mock).mockReturnValueOnce(true);
       (fs.readFileSync as jest.Mock).mockReturnValueOnce(JSON.stringify(mockConfig));
 
       const configManager = new ConfigManager();
 
-      expect(configManager.getApiKey()).toBe(mockConfig.OPENAI_API_KEY);
+      expect(configManager.getApiKey()).toBe(mockConfig.apiKeys[ApiProvider.OPENAI]);
+    });
+
+    it('should return the API key for a specific provider', () => {
+      // Setup mock
+      (fs.existsSync as jest.Mock).mockReturnValueOnce(true);
+      (fs.readFileSync as jest.Mock).mockReturnValueOnce(JSON.stringify(mockConfig));
+
+      const configManager = new ConfigManager();
+
+      expect(configManager.getApiKey(ApiProvider.GOOGLE)).toBe(
+        mockConfig.apiKeys[ApiProvider.GOOGLE]
+      );
+    });
+
+    it('should return empty string for non-existent provider', () => {
+      // Setup mock
+      (fs.existsSync as jest.Mock).mockReturnValueOnce(true);
+      (fs.readFileSync as jest.Mock).mockReturnValueOnce(JSON.stringify(mockConfig));
+
+      const configManager = new ConfigManager();
+
+      expect(configManager.getApiKey(ApiProvider.ANTHROPIC)).toBe('');
+    });
+
+    it('should use the explicit provider when default is unset', () => {
+      // Setup mock for config without default provider
+      (fs.existsSync as jest.Mock).mockReturnValueOnce(true);
+      (fs.readFileSync as jest.Mock).mockReturnValueOnce(
+        JSON.stringify({ apiKeys: { [ApiProvider.OPENAI]: 'test-key' } })
+      );
+
+      const configManager = new ConfigManager();
+
+      // Explicitly provide a provider, even though the default is unset
+      expect(configManager.getApiKey(ApiProvider.OPENAI)).toBe('test-key');
+    });
+
+    it('should handle undefined apiKeys[provider]', () => {
+      // Setup mock for config without the provider we'll request
+      (fs.existsSync as jest.Mock).mockReturnValueOnce(true);
+      (fs.readFileSync as jest.Mock).mockReturnValueOnce(JSON.stringify({ apiKeys: {} }));
+
+      const configManager = new ConfigManager();
+
+      // Using a provider that doesn't exist in the config
+      expect(configManager.getApiKey(ApiProvider.ANTHROPIC)).toBe('');
+    });
+
+    it('should return the key when it exists', () => {
+      // Setup mock for config with the provider we'll request
+      (fs.existsSync as jest.Mock).mockReturnValueOnce(true);
+      (fs.readFileSync as jest.Mock).mockReturnValueOnce(
+        JSON.stringify({
+          apiKeys: {
+            [ApiProvider.ANTHROPIC]: 'anthropic-key',
+          },
+        })
+      );
+
+      const configManager = new ConfigManager();
+
+      // Test non-empty key retrieval for this specific provider
+      expect(configManager.getApiKey(ApiProvider.ANTHROPIC)).toBe('anthropic-key');
+    });
+
+    it('should handle explicit provider without using default provider', () => {
+      // Setup mock for config with default provider set
+      (fs.existsSync as jest.Mock).mockReturnValueOnce(true);
+      (fs.readFileSync as jest.Mock).mockReturnValueOnce(
+        JSON.stringify({
+          apiKeys: {
+            [ApiProvider.ANTHROPIC]: 'anthropic-key',
+            [ApiProvider.OPENAI]: 'openai-key',
+          },
+          defaultProvider: ApiProvider.OPENAI,
+        })
+      );
+
+      const configManager = new ConfigManager();
+
+      // Test that it uses the explicit provider and not the default
+      expect(configManager.getApiKey(ApiProvider.ANTHROPIC)).toBe('anthropic-key');
+    });
+
+    it('should use default provider when no explicit provider is given', () => {
+      // Setup mock for config with default provider set
+      (fs.existsSync as jest.Mock).mockReturnValueOnce(true);
+      (fs.readFileSync as jest.Mock).mockReturnValueOnce(
+        JSON.stringify({
+          apiKeys: {
+            [ApiProvider.ANTHROPIC]: 'anthropic-key',
+            [ApiProvider.OPENAI]: 'openai-key',
+          },
+          defaultProvider: ApiProvider.OPENAI,
+        })
+      );
+
+      const configManager = new ConfigManager();
+
+      // Test that it uses the default provider when no explicit provider is given
+      expect(configManager.getApiKey()).toBe('openai-key');
+    });
+  });
+
+  describe('getApiKeys', () => {
+    it('should return all API keys', () => {
+      // Setup mock
+      (fs.existsSync as jest.Mock).mockReturnValueOnce(true);
+      (fs.readFileSync as jest.Mock).mockReturnValueOnce(JSON.stringify(mockConfig));
+
+      const configManager = new ConfigManager();
+      const keys = configManager.getApiKeys();
+
+      expect(keys[ApiProvider.OPENAI]).toBe(mockConfig.apiKeys[ApiProvider.OPENAI]);
+      expect(keys[ApiProvider.GOOGLE]).toBe(mockConfig.apiKeys[ApiProvider.GOOGLE]);
+    });
+  });
+
+  describe('hasApiKey', () => {
+    it('should return true if key exists for provider', () => {
+      // Setup mock
+      (fs.existsSync as jest.Mock).mockReturnValueOnce(true);
+      (fs.readFileSync as jest.Mock).mockReturnValueOnce(JSON.stringify(mockConfig));
+
+      const configManager = new ConfigManager();
+
+      expect(configManager.hasApiKey(ApiProvider.OPENAI)).toBe(true);
+      expect(configManager.hasApiKey(ApiProvider.GOOGLE)).toBe(true);
+      expect(configManager.hasApiKey(ApiProvider.ANTHROPIC)).toBe(false);
+    });
+  });
+
+  describe('hasAnyApiKey', () => {
+    it('should return true if any API key exists', () => {
+      // Setup mock
+      (fs.existsSync as jest.Mock).mockReturnValueOnce(true);
+      (fs.readFileSync as jest.Mock).mockReturnValueOnce(JSON.stringify(mockConfig));
+
+      const configManager = new ConfigManager();
+
+      expect(configManager.hasAnyApiKey()).toBe(true);
+    });
+
+    it('should return false if no API keys exist', () => {
+      // Setup mock for empty config
+      (fs.existsSync as jest.Mock).mockReturnValueOnce(true);
+      (fs.readFileSync as jest.Mock).mockReturnValueOnce(JSON.stringify({ apiKeys: {} }));
+
+      const configManager = new ConfigManager();
+
+      expect(configManager.hasAnyApiKey()).toBe(false);
+    });
+  });
+
+  describe('getDefaultProvider', () => {
+    it('should return the default provider', () => {
+      // Setup mock
+      (fs.existsSync as jest.Mock).mockReturnValueOnce(true);
+      (fs.readFileSync as jest.Mock).mockReturnValueOnce(JSON.stringify(mockConfig));
+
+      const configManager = new ConfigManager();
+
+      expect(configManager.getDefaultProvider()).toBe(ApiProvider.OPENAI);
+    });
+
+    it('should return OPENAI if no default provider is set', () => {
+      // Setup mock for config without default provider
+      (fs.existsSync as jest.Mock).mockReturnValueOnce(true);
+      (fs.readFileSync as jest.Mock).mockReturnValueOnce(
+        JSON.stringify({ apiKeys: mockConfig.apiKeys })
+      );
+
+      const configManager = new ConfigManager();
+
+      expect(configManager.getDefaultProvider()).toBe(ApiProvider.OPENAI);
+    });
+
+    it('should return OPENAI when config.defaultProvider is undefined', () => {
+      // Setup mock for config without defaultProvider property at all
+      (fs.existsSync as jest.Mock).mockReturnValueOnce(true);
+      (fs.readFileSync as jest.Mock).mockReturnValueOnce(JSON.stringify({ apiKeys: {} }));
+
+      const configManager = new ConfigManager();
+
+      // Force defaultProvider to be explicitly undefined
+      Object.defineProperty(configManager, 'config', {
+        value: { apiKeys: {}, defaultProvider: undefined },
+        writable: true,
+      });
+
+      expect(configManager.getDefaultProvider()).toBe(ApiProvider.OPENAI);
     });
   });
 
@@ -112,7 +371,7 @@ describe('ConfigManager', () => {
       // Default for existsSync is false, so we don't need to set it again
 
       const configManager = new ConfigManager();
-      await configManager.saveApiKey('new-key');
+      await configManager.saveApiKey('new-key', ApiProvider.OPENAI);
 
       expect(fs.mkdirSync).toHaveBeenCalled();
       expect(fs.writeFileSync).toHaveBeenCalled();
@@ -125,7 +384,7 @@ describe('ConfigManager', () => {
         .mockReturnValueOnce(true); // For directory check in saveApiKey
 
       const configManager = new ConfigManager();
-      await configManager.saveApiKey('new-key');
+      await configManager.saveApiKey('new-key', ApiProvider.OPENAI);
 
       expect(fs.mkdirSync).not.toHaveBeenCalled();
       expect(fs.writeFileSync).toHaveBeenCalled();
@@ -138,10 +397,132 @@ describe('ConfigManager', () => {
 
       const configManager = new ConfigManager();
       const newKey = 'new-api-key';
-      await configManager.saveApiKey(newKey);
+      await configManager.saveApiKey(newKey, ApiProvider.GOOGLE);
 
       expect(fs.writeFileSync).toHaveBeenCalled();
-      expect(configManager.getApiKey()).toBe(newKey);
+      expect(configManager.getApiKey(ApiProvider.GOOGLE)).toBe(newKey);
+    });
+
+    it('should set as default provider if no default exists', async () => {
+      // Setup mock for config without default provider
+      (fs.existsSync as jest.Mock).mockReturnValueOnce(true);
+      (fs.readFileSync as jest.Mock).mockReturnValueOnce(JSON.stringify({ apiKeys: {} }));
+
+      const configManager = new ConfigManager();
+      await configManager.saveApiKey('new-key', ApiProvider.ANTHROPIC);
+
+      expect(configManager.getDefaultProvider()).toBe(ApiProvider.ANTHROPIC);
+    });
+
+    it('should initialize apiKeys if null during saveApiKey', async () => {
+      // Setup mock for empty config
+      (fs.existsSync as jest.Mock).mockReturnValueOnce(false);
+
+      const configManager = new ConfigManager();
+
+      // Force apiKeys to be null (simulating broken state)
+      Object.defineProperty(configManager, 'config', {
+        value: { apiKeys: null },
+        writable: true,
+      });
+
+      await configManager.saveApiKey('new-key', ApiProvider.OPENAI);
+
+      expect(configManager.getApiKey(ApiProvider.OPENAI)).toBe('new-key');
+    });
+
+    it('should set default provider when defaultProvider is null', async () => {
+      // Setup mock for empty config
+      (fs.existsSync as jest.Mock).mockReturnValueOnce(false);
+
+      const configManager = new ConfigManager();
+
+      // Force config with null defaultProvider
+      Object.defineProperty(configManager, 'config', {
+        value: { apiKeys: {}, defaultProvider: null },
+        writable: true,
+      });
+
+      await configManager.saveApiKey('new-key', ApiProvider.ANTHROPIC);
+
+      // Should set ANTHROPIC as the default provider
+      expect(configManager.getDefaultProvider()).toBe(ApiProvider.ANTHROPIC);
+    });
+
+    it('should not override existing default provider', async () => {
+      // Setup mock with existing default provider
+      (fs.existsSync as jest.Mock).mockReturnValueOnce(true);
+      (fs.readFileSync as jest.Mock).mockReturnValueOnce(
+        JSON.stringify({
+          apiKeys: {},
+          defaultProvider: ApiProvider.ANTHROPIC,
+        })
+      );
+
+      const configManager = new ConfigManager();
+      await configManager.saveApiKey('new-key', ApiProvider.OPENAI);
+
+      // Default provider should still be ANTHROPIC
+      expect(configManager.getDefaultProvider()).toBe(ApiProvider.ANTHROPIC);
+    });
+
+    it('should preserve existing apiKeys when adding a new key', async () => {
+      // Setup mock with existing keys
+      const initialConfig = {
+        apiKeys: {
+          [ApiProvider.OPENAI]: 'existing-key',
+        },
+      };
+      (fs.existsSync as jest.Mock).mockReturnValueOnce(true);
+      (fs.readFileSync as jest.Mock).mockReturnValueOnce(JSON.stringify(initialConfig));
+
+      const configManager = new ConfigManager();
+      await configManager.saveApiKey('new-key', ApiProvider.ANTHROPIC);
+
+      // Should preserve the existing key
+      expect(configManager.getApiKey(ApiProvider.OPENAI)).toBe('existing-key');
+      // And add the new key
+      expect(configManager.getApiKey(ApiProvider.ANTHROPIC)).toBe('new-key');
+    });
+
+    it('should use OPENAI as the default provider when provider parameter is not specified', async () => {
+      // Setup mock for empty config
+      (fs.existsSync as jest.Mock).mockReturnValueOnce(false);
+
+      const configManager = new ConfigManager();
+
+      // Call saveApiKey without specifying a provider
+      await configManager.saveApiKey('new-key');
+
+      // Should use OPENAI as the default provider
+      expect(configManager.getApiKey(ApiProvider.OPENAI)).toBe('new-key');
+      expect(configManager.getDefaultProvider()).toBe(ApiProvider.OPENAI);
+    });
+
+    it('should set the API key as the default provider when no default exists', async () => {
+      // Setup mock for config without default provider
+      (fs.existsSync as jest.Mock).mockReturnValueOnce(true);
+      (fs.readFileSync as jest.Mock).mockReturnValueOnce(JSON.stringify({ apiKeys: {} }));
+
+      const configManager = new ConfigManager();
+      await configManager.saveApiKey('new-key', ApiProvider.ANTHROPIC);
+
+      // Should set ANTHROPIC as the default provider
+      expect(configManager.getDefaultProvider()).toBe(ApiProvider.ANTHROPIC);
+    });
+  });
+
+  describe('setDefaultProvider', () => {
+    it('should set the default provider', async () => {
+      // Setup mock
+      (fs.existsSync as jest.Mock).mockReturnValueOnce(true);
+      (fs.readFileSync as jest.Mock).mockReturnValueOnce(JSON.stringify(mockConfig));
+
+      const configManager = new ConfigManager();
+      await configManager.setDefaultProvider(ApiProvider.GOOGLE);
+
+      expect(fs.writeFileSync).toHaveBeenCalled();
+      expect(configManager.getDefaultProvider()).toBe(ApiProvider.GOOGLE);
     });
   });
 });

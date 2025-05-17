@@ -1,60 +1,63 @@
-import OpenAI from 'openai';
-import { OpenAIResponse } from '../types';
+import { AIResponse, ApiProvider } from '../types';
 
-export class OpenAIError extends Error {
+/**
+ * Custom error for AI operations
+ */
+export class AIError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = 'OpenAIError';
+    this.name = 'AIError';
   }
 }
 
-export class OpenAIManager {
+/**
+ * Base class for AI model integrations
+ */
+export abstract class BaseAIManager {
   public static readonly MAX_ATTEMPTS = 3;
   public static readonly MAX_TOKENS = 100;
   public static readonly TEMPERATURE = 0.7;
 
-  constructor(private apiKey: string) {
+  protected provider: ApiProvider;
+
+  constructor(
+    protected apiKey: string,
+    provider: ApiProvider
+  ) {
     if (!apiKey) {
-      throw new OpenAIError('OpenAI API key is required');
+      throw new AIError(`API key for ${provider} is required`);
     }
+    this.provider = provider;
   }
 
-  private async makeRequest(requestBody: any): Promise<OpenAIResponse> {
-    try {
-      const openai = new OpenAI({ apiKey: this.apiKey });
-      const response = await openai.chat.completions.create({
-        model: 'gpt-4o-mini',
-        messages: [{ role: 'user', content: requestBody.messages[0].content }],
-        max_tokens: OpenAIManager.MAX_TOKENS,
-        temperature: OpenAIManager.TEMPERATURE,
-      });
+  /**
+   * Abstract method to make API requests to the AI provider
+   */
+  // eslint-disable-next-line no-unused-vars
+  protected abstract makeRequest(requestBody: any): Promise<AIResponse>;
 
-      return response as unknown as OpenAIResponse;
-    } catch (error) {
-      throw new OpenAIError(
-        error instanceof Error ? error.message : 'Failed to make OpenAI request'
-      );
-    }
-  }
-
+  /**
+   * Generates a commit message based on changes
+   */
   public async generateCommitMessage(
     changes: string,
-    prefix: string,
+    prefix?: string,
     previousMessages: string[] = []
   ): Promise<string> {
     let prevMessage = '';
     let attempts = 0;
 
-    for (attempts = 0; attempts < OpenAIManager.MAX_ATTEMPTS; attempts++) {
-      let promptText = 'Please suggest a git commit message following Conventional Commits format.';
+    for (attempts = 0; attempts < BaseAIManager.MAX_ATTEMPTS; attempts++) {
+      let promptText =
+        'Please suggest a git commit message following Conventional Commits format. The message MUST be a single line only.';
       if (prefix) {
         promptText += ` The message MUST start with: ${prefix}`;
       } else {
         promptText +=
-          " The message MUST start with one of these types: feat, fix, docs, style, refactor, perf, test, or chore. Only add a scope in parentheses if it provides meaningful context about the change (e.g., 'feat(auth)' for authentication features). Do NOT add a scope just because you see a filename.";
+          " The message MUST start with one of these types: feat, fix, docs, style, refactor, perf, test, or chore. Always include a scope in parentheses (e.g., 'feat(auth)', 'fix(api)'). Use filenames, components, or affected areas as scope identifiers.";
       }
       promptText +=
-        " Use imperative mood and keep it concise.\nExample formats:\ntype: description (preferred when no specific scope is needed)\ntype(scope): description (only when scope adds meaningful context)\n\nImportant: reply with the commit message only.\n\nNote: If you see '[File: filename - Too many changes to display]', treat it as a refactor of that file and focus on the overall purpose of the changes.";
+        " Use imperative mood and keep it concise. The description part MUST start with lowercase letters.\nExample format:\ntype(scope): add feature (not 'Add feature')\n\nImportant: reply with ONLY the commit message as a single line. No additional text, explanations, or multi-line commits.";
 
       if (previousMessages.length > 0) {
         promptText +=
@@ -70,17 +73,11 @@ export class OpenAIManager {
       try {
         const response = await this.makeRequest(requestBody);
 
-        if (
-          !response ||
-          !Array.isArray(response.choices) ||
-          !response.choices[0] ||
-          !response.choices[0].message ||
-          typeof response.choices[0].message.content !== 'string'
-        ) {
-          throw new OpenAIError('Failed to generate commit message');
+        if (!response || typeof response.content !== 'string') {
+          throw new AIError('Failed to generate commit message');
         }
 
-        const message = response.choices[0].message.content;
+        const message = response.content?.trim();
 
         // Validate the message format
         if (prefix) {
@@ -109,24 +106,30 @@ export class OpenAIManager {
 
         prevMessage = message;
       } catch (error) {
-        throw new OpenAIError(
+        throw new AIError(
           error instanceof Error ? error.message : 'Failed to generate commit message'
         );
       }
     }
 
     // Should never reach here, but throw as a safeguard
-    throw new OpenAIError('Failed to generate commit message');
+    throw new AIError('Failed to generate commit message');
   }
 
+  /**
+   * Handles retry when the same message is generated
+   */
   // Extracted method to make testing easier
-  public handleSameMessageRetry(message: string): void {
+  protected handleSameMessageRetry(message: string): void {
     console.log('Generated message:', message);
     console.log('Generated message is the same as previous. Retrying...');
   }
 
+  /**
+   * Processes message and determines if it should be returned
+   */
   // Process message decisions in a testable way
-  public processValidMessage(
+  protected processValidMessage(
     message: string,
     prevMessage: string,
     attempts: number
@@ -137,7 +140,7 @@ export class OpenAIManager {
     }
 
     // If we've reached the last attempt, return the message
-    if (attempts === OpenAIManager.MAX_ATTEMPTS - 1) {
+    if (attempts === BaseAIManager.MAX_ATTEMPTS - 1) {
       return { shouldReturn: true, message };
     }
 
@@ -146,3 +149,6 @@ export class OpenAIManager {
     return { shouldReturn: false, message };
   }
 }
+
+// Export the AIError as OpenAIError for backward compatibility
+export { AIError as OpenAIError };

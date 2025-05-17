@@ -6,6 +6,9 @@ export enum GitStatus {
   NO_STAGED_CHANGES = 'NO_STAGED_CHANGES',
 }
 
+/**
+ * Custom error for Git operations
+ */
 export class GitError extends Error {
   constructor(message: string) {
     super(message);
@@ -13,10 +16,16 @@ export class GitError extends Error {
   }
 }
 
+/**
+ * Manages Git operations
+ */
 export class GitManager {
-  private static readonly MAX_CHANGES_PER_FILE = 500;
-  private static readonly MAX_TOTAL_CHANGES = 5000;
+  public static readonly MAX_CHANGES_PER_FILE = 1000;
+  public static readonly MAX_TOTAL_CHANGES = 10000;
 
+  /**
+   * Processes command line arguments for commit
+   */
   public static processCommitArgs(args: string[]): CommitArgs {
     const processedArgs: string[] = [];
     let skipNext = false;
@@ -42,6 +51,9 @@ export class GitManager {
     return { prefix, args: processedArgs };
   }
 
+  /**
+   * Gets changes staged for commit
+   */
   public static getStagedChanges(): string | GitStatus {
     try {
       const files = execSync('git diff --cached --name-only').toString().trim().split('\n');
@@ -93,6 +105,9 @@ export class GitManager {
     }
   }
 
+  /**
+   * Commits changes with the provided message
+   */
   public static commit(message: string, args: string[] = []): void {
     try {
       const argsStr = args.length > 0 ? ' ' + args.join(' ') : '';

@@ -37,11 +37,15 @@
   "author": "Sahar Avraham",
   "license": "MIT",
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.50.4",
+    "@google/genai": "^0.13.0",
     "chalk": "^4.1.2",
+    "inquirer": "^12.6.1",
     "openai": "^4.98.0"
   },
   "devDependencies": {
     "@types/chalk": "^2.2.4",
+    "@types/inquirer": "^9.0.8",
     "@types/jest": "^29.5.14",
     "@types/node": "^22.15.17",
     "@typescript-eslint/eslint-plugin": "^8.32.0",

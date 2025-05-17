@@ -1,0 +1,80 @@
+#!/usr/bin/env node
+
+import readline from 'readline';
+import inquirer from 'inquirer';
+import { ConfigManager } from '../config';
+import { GitManager } from '../git';
+
+// Import all CLI components
+import { showHelp, showSettings, promptCommitMessage, setPromptFunctions } from './commands';
+import { promptForProvider, promptForDefaultProvider, setPromptCommitMessage } from './prompt';
+
+// Fix circular dependencies by registering functions
+setPromptCommitMessage(promptCommitMessage);
+setPromptFunctions({ promptForProvider, promptForDefaultProvider });
+
+// Create readline interface
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout,
+});
+
+/**
+ * Main entry point for the CLI
+ */
+async function mainFunc(): Promise<void> {
+  // Command line arguments
+  const args = process.argv.slice(2);
+  const commandArgs = GitManager.processCommitArgs(args);
+
+  // Process commands
+  if (args.includes('help') || args.includes('--help') || args.includes('-h')) {
+    showHelp(rl);
+    return;
+  }
+
+  if (args.includes('settings') || args.includes('config')) {
+    showSettings(rl);
+    return;
+  }
+
+  // Process API key setup
+  const configManager = new ConfigManager();
+  const defaultProvider = configManager.getDefaultProvider();
+  const apiKey = configManager.getApiKey(defaultProvider);
+
+  if (!configManager.hasAnyApiKey()) {
+    await promptForProvider();
+  } else if (!apiKey) {
+    // Default provider has no key, but other providers might
+    console.log(`\n⚠️ No API key for default provider (${defaultProvider}).`);
+
+    const { setupDifferentProvider } = await inquirer.prompt([
+      {
+        type: 'list',
+        name: 'setupDifferentProvider',
+        message: 'Would you like to set up a different provider?',
+        choices: [
+          { name: 'Yes', value: true },
+          { name: 'No', value: false },
+        ],
+      },
+    ]);
+
+    if (setupDifferentProvider) {
+      await promptForProvider();
+    } else {
+      rl.close();
+    }
+  } else {
+    // We have an API key for the default provider
+    await promptCommitMessage(rl, [], commandArgs.args);
+  }
+}
+
+// Export for external use
+export const main = mainFunc;
+export * from './commands';
+export * from './messages';
+export * from './prompt';
+export * from './validation';
