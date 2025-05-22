@@ -72,7 +72,8 @@ export function showSettings(rl: any): void {
 export async function promptCommitMessage(
   rl: any,
   previousMessages: string[] = [],
-  gitArgs: string[] = []
+  prefix?: string,
+  commandArgs: string[] = []
 ): Promise<void> {
   try {
     const configManager = new ConfigManager();
@@ -97,8 +98,6 @@ export async function promptCommitMessage(
       return;
     }
 
-    const { prefix, args } = GitManager.processCommitArgs(gitArgs);
-
     const suggestedMsg = await ai.generateCommitMessage(changes, prefix, previousMessages);
 
     console.log(`\nCommit message: "${chalk.cyan(suggestedMsg)}"`);
@@ -114,7 +113,7 @@ export async function promptCommitMessage(
 
     if (confirmed) {
       try {
-        GitManager.commit(suggestedMsg, [...gitArgs, ...args]);
+        GitManager.commit(suggestedMsg, commandArgs);
         console.log();
         rl.close();
       } catch {
@@ -126,7 +125,7 @@ export async function promptCommitMessage(
       // Regenerate a new commit message, passing the last three messages
       console.log();
       const newPreviousMessages = [...previousMessages, suggestedMsg].slice(-3);
-      await promptCommitMessage(rl, newPreviousMessages, gitArgs);
+      await promptCommitMessage(rl, newPreviousMessages, prefix, commandArgs);
     }
   } catch {
     // Exit cleanly without showing error messages

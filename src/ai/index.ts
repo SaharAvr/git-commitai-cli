@@ -47,7 +47,7 @@ export class AIManager {
    */
   public async generateCommitMessage(
     changes: string,
-    prefix: string,
+    prefix?: string,
     previousMessages: string[] = []
   ): Promise<string> {
     return this.implementation.generateCommitMessage(changes, prefix, previousMessages);

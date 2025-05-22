@@ -39,15 +39,19 @@ process.on('uncaughtException', (error) => {
 async function mainFunc(): Promise<void> {
   // Command line arguments
   const args = process.argv.slice(2);
-  const commandArgs = GitManager.processCommitArgs(args);
+  const { prefix, args: commandArgs } = GitManager.processCommitArgs(args);
 
   // Process commands
-  if (args.includes('help') || args.includes('--help') || args.includes('-h')) {
+  if (
+    commandArgs.includes('help') ||
+    commandArgs.includes('--help') ||
+    commandArgs.includes('-h')
+  ) {
     showHelp(rl);
     return;
   }
 
-  if (args.includes('settings') || args.includes('config')) {
+  if (commandArgs.includes('settings') || commandArgs.includes('config')) {
     showSettings(rl);
     return;
   }
@@ -82,7 +86,7 @@ async function mainFunc(): Promise<void> {
     }
   } else {
     // We have an API key for the default provider
-    await promptCommitMessage(rl, [], commandArgs.args);
+    await promptCommitMessage(rl, [], prefix, commandArgs);
   }
 }
 
