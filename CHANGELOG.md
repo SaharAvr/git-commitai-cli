@@ -5,7 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.1.0] - 2025-05-22
+## [2.2.0] - 2025-07-02
+
+### Fixed
+- `git commitai help` and `git commitai settings` commands now execute properly instead of being treated as commit message prefixes
+
+### Changed
+- Refactored command keyword handling to use centralized constants shared between CLI and Git modules
+- Enhanced command argument processing logic for better maintainability
+
+### Added
+- Comprehensive test coverage for command argument processing scenarios
+
+## [2.1.0] - 2025-05-22q
 
 ### Fixed
 - Correct parameter passing in promptCommitMessage function
