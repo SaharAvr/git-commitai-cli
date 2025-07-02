@@ -1,5 +1,5 @@
 import { execSync } from 'child_process';
-import { CommitArgs } from '../types';
+import { CommitArgs, ALL_COMMAND_KEYWORDS } from '../types';
 
 export enum GitStatus {
   /* eslint-disable no-unused-vars */
@@ -31,6 +31,8 @@ export class GitManager {
     let skipNext = false;
     let prefix = '';
 
+    // Define command keywords that should never be treated as prefixes
+
     for (const arg of args) {
       if (skipNext) {
         skipNext = false;
@@ -40,7 +42,10 @@ export class GitManager {
       if (arg === '-m' || arg === '--message') {
         skipNext = true;
       } else if (!arg.startsWith('-m') && !arg.startsWith('--message=')) {
-        if (!prefix && !arg.startsWith('-')) {
+        // If this is a command keyword, always add it to processedArgs
+        if (ALL_COMMAND_KEYWORDS.includes(arg as any)) {
+          processedArgs.push(arg);
+        } else if (!prefix && !arg.startsWith('-')) {
           prefix = arg;
         } else {
           processedArgs.push(arg);

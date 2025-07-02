@@ -4,6 +4,7 @@ import readline from 'readline';
 import inquirer from 'inquirer';
 import { ConfigManager } from '../config';
 import { GitManager } from '../git';
+import { COMMAND_KEYWORDS } from '../types';
 
 // Import all CLI components
 import { showHelp, showSettings, promptCommitMessage } from './commands';
@@ -42,16 +43,12 @@ async function mainFunc(): Promise<void> {
   const { prefix, args: commandArgs } = GitManager.processCommitArgs(args);
 
   // Process commands
-  if (
-    commandArgs.includes('help') ||
-    commandArgs.includes('--help') ||
-    commandArgs.includes('-h')
-  ) {
+  if (COMMAND_KEYWORDS.HELP.some((keyword) => commandArgs.includes(keyword))) {
     showHelp(rl);
     return;
   }
 
-  if (commandArgs.includes('settings') || commandArgs.includes('config')) {
+  if (COMMAND_KEYWORDS.SETTINGS.some((keyword) => commandArgs.includes(keyword))) {
     showSettings(rl);
     return;
   }

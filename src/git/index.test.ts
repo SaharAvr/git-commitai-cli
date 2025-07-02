@@ -23,6 +23,30 @@ describe('GitManager', () => {
       const result = GitManager.processCommitArgs([]);
       expect(result).toEqual({ prefix: '', args: [] });
     });
+    it('should treat help command as argument not prefix', () => {
+      const result = GitManager.processCommitArgs(['help']);
+      expect(result).toEqual({ prefix: '', args: ['help'] });
+    });
+    it('should treat settings command as argument not prefix', () => {
+      const result = GitManager.processCommitArgs(['settings']);
+      expect(result).toEqual({ prefix: '', args: ['settings'] });
+    });
+    it('should treat config command as argument not prefix', () => {
+      const result = GitManager.processCommitArgs(['config']);
+      expect(result).toEqual({ prefix: '', args: ['config'] });
+    });
+    it('should treat --help flag as argument not prefix', () => {
+      const result = GitManager.processCommitArgs(['--help']);
+      expect(result).toEqual({ prefix: '', args: ['--help'] });
+    });
+    it('should treat -h flag as argument not prefix', () => {
+      const result = GitManager.processCommitArgs(['-h']);
+      expect(result).toEqual({ prefix: '', args: ['-h'] });
+    });
+    it('should handle command keywords mixed with other args', () => {
+      const result = GitManager.processCommitArgs(['help', '--verbose']);
+      expect(result).toEqual({ prefix: '', args: ['help', '--verbose'] });
+    });
   });
 
   describe('getStagedChanges', () => {

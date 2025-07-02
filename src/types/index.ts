@@ -45,3 +45,15 @@ export interface AIResponse {
 }
 
 export type AIModelImplementation = ChatGptAIManager | GeminiManager | ClaudeManager;
+
+// Command constants
+export const COMMAND_KEYWORDS = {
+  HELP: ['help', '--help', '-h'],
+  SETTINGS: ['settings', 'config'],
+} as const;
+
+// Flattened array of all command keywords for easy checking
+export const ALL_COMMAND_KEYWORDS = [
+  ...COMMAND_KEYWORDS.HELP,
+  ...COMMAND_KEYWORDS.SETTINGS,
+] as const;
