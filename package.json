@@ -41,7 +41,7 @@
     "@google/genai": "^0.13.0",
     "chalk": "^4.1.2",
     "inquirer": "^12.6.1",
-    "openai": "^4.98.0"
+    "openai": "^6.5.0"
   },
   "devDependencies": {
     "@types/chalk": "^2.2.4",
