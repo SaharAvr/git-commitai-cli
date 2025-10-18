@@ -54,13 +54,21 @@ export function displayHelpMessage(): void {
     `  ${chalk.cyan('git commitai <type>')}            Specify commit type (e.g., feat, fix, docs)\n`
   );
 
+  console.log(chalk.yellow('Options:'));
+  console.log(
+    `  ${chalk.cyan('-y, --yes')}                      Auto-accept the generated commit message\n`
+  );
+
   console.log(chalk.yellow('Examples:'));
   console.log(`  ${chalk.cyan('git commitai')}                   Generate a commit message`);
+  console.log(
+    `  ${chalk.cyan('git commitai -y')}                Generate and auto-accept commit message`
+  );
   console.log(
     `  ${chalk.cyan('git commitai feat')}              Generate a feature commit message`
   );
   console.log(
-    `  ${chalk.cyan('git commitai fix')}               Generate a bug fix commit message`
+    `  ${chalk.cyan('git commitai fix --yes')}         Generate and auto-accept a bug fix commit`
   );
   console.log(
     `  ${chalk.cyan('git commitai --amend')}           Generate a message and amend the last commit\n`

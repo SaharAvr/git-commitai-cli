@@ -40,7 +40,7 @@ process.on('uncaughtException', (error) => {
 async function mainFunc(): Promise<void> {
   // Command line arguments
   const args = process.argv.slice(2);
-  const { prefix, args: commandArgs } = GitManager.processCommitArgs(args);
+  const { prefix, args: commandArgs, skipConfirmation } = GitManager.processCommitArgs(args);
 
   // Process commands
   if (COMMAND_KEYWORDS.HELP.some((keyword) => commandArgs.includes(keyword))) {
@@ -83,7 +83,7 @@ async function mainFunc(): Promise<void> {
     }
   } else {
     // We have an API key for the default provider
-    await promptCommitMessage(rl, [], prefix, commandArgs);
+    await promptCommitMessage(rl, [], prefix, commandArgs, skipConfirmation);
   }
 }
 

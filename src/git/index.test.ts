@@ -13,39 +13,55 @@ describe('GitManager', () => {
   describe('processCommitArgs', () => {
     it('should extract prefix and remaining args', () => {
       const result = GitManager.processCommitArgs(['feat', '-m', 'test', '--amend']);
-      expect(result).toEqual({ prefix: 'feat', args: ['--amend'] });
+      expect(result).toEqual({ prefix: 'feat', args: ['--amend'], skipConfirmation: false });
     });
     it('should handle no prefix', () => {
       const result = GitManager.processCommitArgs(['-m', 'test', '--amend']);
-      expect(result).toEqual({ prefix: '', args: ['--amend'] });
+      expect(result).toEqual({ prefix: '', args: ['--amend'], skipConfirmation: false });
     });
     it('should handle empty args array', () => {
       const result = GitManager.processCommitArgs([]);
-      expect(result).toEqual({ prefix: '', args: [] });
+      expect(result).toEqual({ prefix: '', args: [], skipConfirmation: false });
     });
     it('should treat help command as argument not prefix', () => {
       const result = GitManager.processCommitArgs(['help']);
-      expect(result).toEqual({ prefix: '', args: ['help'] });
+      expect(result).toEqual({ prefix: '', args: ['help'], skipConfirmation: false });
     });
     it('should treat settings command as argument not prefix', () => {
       const result = GitManager.processCommitArgs(['settings']);
-      expect(result).toEqual({ prefix: '', args: ['settings'] });
+      expect(result).toEqual({ prefix: '', args: ['settings'], skipConfirmation: false });
     });
     it('should treat config command as argument not prefix', () => {
       const result = GitManager.processCommitArgs(['config']);
-      expect(result).toEqual({ prefix: '', args: ['config'] });
+      expect(result).toEqual({ prefix: '', args: ['config'], skipConfirmation: false });
     });
     it('should treat --help flag as argument not prefix', () => {
       const result = GitManager.processCommitArgs(['--help']);
-      expect(result).toEqual({ prefix: '', args: ['--help'] });
+      expect(result).toEqual({ prefix: '', args: ['--help'], skipConfirmation: false });
     });
     it('should treat -h flag as argument not prefix', () => {
       const result = GitManager.processCommitArgs(['-h']);
-      expect(result).toEqual({ prefix: '', args: ['-h'] });
+      expect(result).toEqual({ prefix: '', args: ['-h'], skipConfirmation: false });
     });
     it('should handle command keywords mixed with other args', () => {
       const result = GitManager.processCommitArgs(['help', '--verbose']);
-      expect(result).toEqual({ prefix: '', args: ['help', '--verbose'] });
+      expect(result).toEqual({ prefix: '', args: ['help', '--verbose'], skipConfirmation: false });
+    });
+    it('should set skipConfirmation to true for -y flag', () => {
+      const result = GitManager.processCommitArgs(['-y']);
+      expect(result).toEqual({ prefix: '', args: [], skipConfirmation: true });
+    });
+    it('should set skipConfirmation to true for --yes flag', () => {
+      const result = GitManager.processCommitArgs(['--yes']);
+      expect(result).toEqual({ prefix: '', args: [], skipConfirmation: true });
+    });
+    it('should handle -y flag with prefix and other args', () => {
+      const result = GitManager.processCommitArgs(['feat', '-y', '--amend']);
+      expect(result).toEqual({ prefix: 'feat', args: ['--amend'], skipConfirmation: true });
+    });
+    it('should handle --yes flag with prefix and other args', () => {
+      const result = GitManager.processCommitArgs(['fix', '--yes', '--no-verify']);
+      expect(result).toEqual({ prefix: 'fix', args: ['--no-verify'], skipConfirmation: true });
     });
   });
 

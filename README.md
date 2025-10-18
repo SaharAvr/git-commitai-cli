@@ -17,6 +17,7 @@ A command-line tool that helps you write clear, conventional git commit messages
   - Anthropic (Claude)
 - Follows the Conventional Commits specification
 - Supports message regeneration
+- Auto-accept mode with `-y` or `--yes` flag
 - Stores your API keys securely
 - Allows specifying commit prefixes
 - Passes through git commit arguments
@@ -45,11 +46,19 @@ git add .
 # Generate and commit with a suggested message
 git commitai
 
+# Auto-accept the generated message (no prompt)
+git commitai -y
+# or
+git commitai --yes
+
 # Pass git commit arguments
 git commitai --no-verify
 
 # Use a specific prefix
 git commitai "feat"
+
+# Combine options
+git commitai feat -y --no-verify
 
 # Change AI provider or other settings
 git commitai settings

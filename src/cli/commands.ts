@@ -73,7 +73,8 @@ export async function promptCommitMessage(
   rl: any,
   previousMessages: string[] = [],
   prefix?: string,
-  commandArgs: string[] = []
+  commandArgs: string[] = [],
+  skipConfirmation: boolean = false
 ): Promise<void> {
   try {
     const configManager = new ConfigManager();
@@ -102,14 +103,19 @@ export async function promptCommitMessage(
 
     console.log(`\nCommit message: "${chalk.cyan(suggestedMsg)}"`);
 
-    const { confirmed } = await inquirer.prompt([
-      {
-        type: 'confirm',
-        name: 'confirmed',
-        message: 'Use this message?',
-        default: true,
-      },
-    ]);
+    let confirmed = skipConfirmation;
+
+    if (!skipConfirmation) {
+      const result = await inquirer.prompt([
+        {
+          type: 'confirm',
+          name: 'confirmed',
+          message: 'Use this message?',
+          default: true,
+        },
+      ]);
+      confirmed = result.confirmed;
+    }
 
     if (confirmed) {
       try {
@@ -125,7 +131,7 @@ export async function promptCommitMessage(
       // Regenerate a new commit message, passing the last three messages
       console.log();
       const newPreviousMessages = [...previousMessages, suggestedMsg].slice(-3);
-      await promptCommitMessage(rl, newPreviousMessages, prefix, commandArgs);
+      await promptCommitMessage(rl, newPreviousMessages, prefix, commandArgs, skipConfirmation);
     }
   } catch {
     // Exit cleanly without showing error messages

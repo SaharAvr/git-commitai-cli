@@ -30,6 +30,7 @@ export class GitManager {
     const processedArgs: string[] = [];
     let skipNext = false;
     let prefix = '';
+    let skipConfirmation = false;
 
     // Define command keywords that should never be treated as prefixes
 
@@ -39,7 +40,9 @@ export class GitManager {
         continue;
       }
 
-      if (arg === '-m' || arg === '--message') {
+      if (arg === '-y' || arg === '--yes') {
+        skipConfirmation = true;
+      } else if (arg === '-m' || arg === '--message') {
         skipNext = true;
       } else if (!arg.startsWith('-m') && !arg.startsWith('--message=')) {
         // If this is a command keyword, always add it to processedArgs
@@ -53,7 +56,7 @@ export class GitManager {
       }
     }
 
-    return { prefix, args: processedArgs };
+    return { prefix, args: processedArgs, skipConfirmation };
   }
 
   /**

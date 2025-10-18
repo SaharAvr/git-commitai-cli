@@ -25,6 +25,7 @@ export interface Config {
 export interface CommitArgs {
   prefix: string;
   args: string[];
+  skipConfirmation: boolean;
 }
 
 export interface CommitResult {
