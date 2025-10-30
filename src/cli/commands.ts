@@ -122,10 +122,11 @@ export async function promptCommitMessage(
         GitManager.commit(suggestedMsg, commandArgs);
         console.log();
         rl.close();
-      } catch {
-        // Exit cleanly without showing error messages
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : 'Failed to commit changes';
+        console.error(chalk.red(`\ngit-commitai: ${errorMsg}`));
         rl.close();
-        return;
+        process.exit(1);
       }
     } else {
       // Regenerate a new commit message, passing the last three messages
@@ -133,9 +134,10 @@ export async function promptCommitMessage(
       const newPreviousMessages = [...previousMessages, suggestedMsg].slice(-3);
       await promptCommitMessage(rl, newPreviousMessages, prefix, commandArgs, skipConfirmation);
     }
-  } catch {
-    // Exit cleanly without showing error messages
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : 'Failed to generate commit message';
+    console.error(chalk.red(`\ngit-commitai: ${errorMsg}`));
     rl.close();
-    return;
+    process.exit(1);
   }
 }
