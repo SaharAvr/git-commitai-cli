@@ -148,6 +148,50 @@ describe('GitManager', () => {
       expect(() => GitManager.getStagedChanges()).toThrow(GitError);
       expect(() => GitManager.getStagedChanges()).toThrow('Failed to get staged changes');
     });
+    it('should handle binary/asset files without diffing', () => {
+      (execSync as jest.Mock).mockImplementation((cmd: string) => {
+        if (cmd.includes('git diff --cached --name-only')) {
+          return 'image.png\ncode.ts\nvideo.mp4\naudio.mp3';
+        }
+        if (cmd.includes('git diff --cached -- "code.ts"')) {
+          return '+console.log("test")\n-console.log("old")';
+        }
+        return '';
+      });
+      const result = GitManager.getStagedChanges();
+      expect(result).toContain('image.png - Binary/Asset file');
+      expect(result).toContain('video.mp4 - Binary/Asset file');
+      expect(result).toContain('audio.mp3 - Binary/Asset file');
+      expect(result).toContain('code.ts');
+      expect(result).toContain('console.log');
+    });
+    it('should handle different binary file extensions', () => {
+      (execSync as jest.Mock).mockImplementation((cmd: string) => {
+        if (cmd.includes('git diff --cached --name-only')) {
+          return 'doc.pdf\nfont.ttf\narchive.zip\nexec.exe';
+        }
+        return '';
+      });
+      const result = GitManager.getStagedChanges();
+      expect(result).toContain('doc.pdf - Binary/Asset file');
+      expect(result).toContain('font.ttf - Binary/Asset file');
+      expect(result).toContain('archive.zip - Binary/Asset file');
+      expect(result).toContain('exec.exe - Binary/Asset file');
+    });
+    it('should handle files without extensions as binary files', () => {
+      (execSync as jest.Mock).mockImplementation((cmd: string) => {
+        if (cmd.includes('git diff --cached --name-only')) {
+          return 'Makefile\nDockerfile\nLICENSE';
+        }
+        return '';
+      });
+      const result = GitManager.getStagedChanges();
+      expect(result).toContain('Makefile - Binary/Asset file');
+      expect(result).toContain('Dockerfile - Binary/Asset file');
+      expect(result).toContain('LICENSE - Binary/Asset file');
+      expect(result).not.toContain('FROM node');
+      expect(result).not.toContain('build:');
+    });
   });
 
   describe('commit', () => {

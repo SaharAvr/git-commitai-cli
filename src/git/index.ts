@@ -23,6 +23,93 @@ export class GitManager {
   public static readonly MAX_CHANGES_PER_FILE = 1000;
   public static readonly MAX_TOTAL_CHANGES = 10000;
 
+  // Binary and asset file extensions that should not be diffed
+  private static readonly BINARY_EXTENSIONS = [
+    // Images
+    'png',
+    'jpg',
+    'jpeg',
+    'gif',
+    'bmp',
+    'svg',
+    'webp',
+    'ico',
+    'tiff',
+    'tif',
+    'heic',
+    'heif',
+    // Videos
+    'mp4',
+    'avi',
+    'mov',
+    'wmv',
+    'flv',
+    'mkv',
+    'webm',
+    'm4v',
+    'mpg',
+    'mpeg',
+    // Audio
+    'mp3',
+    'wav',
+    'ogg',
+    'flac',
+    'aac',
+    'm4a',
+    'wma',
+    'aiff',
+    // Archives
+    'zip',
+    'tar',
+    'gz',
+    'rar',
+    '7z',
+    'bz2',
+    'xz',
+    // Executables and binaries
+    'exe',
+    'dll',
+    'so',
+    'dylib',
+    'bin',
+    'dmg',
+    'pkg',
+    'deb',
+    'rpm',
+    // Documents (binary formats)
+    'pdf',
+    'doc',
+    'docx',
+    'xls',
+    'xlsx',
+    'ppt',
+    'pptx',
+    // Fonts
+    'ttf',
+    'otf',
+    'woff',
+    'woff2',
+    'eot',
+    // Other
+    'pyc',
+    'class',
+    'o',
+    'a',
+    'lib',
+  ];
+
+  /**
+   * Checks if a file is binary/asset based on extension
+   */
+  private static isBinaryFile(filename: string): boolean {
+    const ext = filename.split('.').pop()?.toLowerCase();
+    // If no extension or same as filename (no dot), treat as binary
+    if (!ext || ext === filename.toLowerCase()) {
+      return true;
+    }
+    return this.BINARY_EXTENSIONS.includes(ext);
+  }
+
   /**
    * Processes command line arguments for commit
    */
@@ -76,6 +163,12 @@ export class GitManager {
 
       // First pass: count total changes and identify large files
       for (const file of files) {
+        // Check if file is binary/asset - just show filename
+        if (this.isBinaryFile(file)) {
+          allChanges += `[File: ${file} - Binary/Asset file]\n`;
+          continue;
+        }
+
         const fileChanges = execSync(`git diff --cached -- "${file}"`).toString();
         const changeCount = fileChanges.split('\n').length;
         totalChangeCount += changeCount;
