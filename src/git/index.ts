@@ -123,22 +123,14 @@ export class GitManager {
         stdio: 'inherit',
       });
     } catch (error: any) {
-      // Print all available error output
-      if (error && typeof error === 'object') {
-        if ('stdout' in error && error.stdout) {
-          process.stdout.write(error.stdout.toString());
-        }
-        if ('stderr' in error && error.stderr) {
-          process.stderr.write(error.stderr.toString());
-        }
-      }
-      // Print error message if nothing else
+      // Extract the actual error message
+      let actualError = 'Failed to commit changes';
+
       if (error instanceof Error && error.message) {
-        process.stderr.write(error.message + '\n');
+        actualError = error.message;
       }
-      const gitError = new GitError('Failed to commit changes');
-      if (gitError.message) process.stdout.write(gitError.message + '\n');
-      throw gitError;
+
+      throw new GitError(actualError);
     }
   }
 }

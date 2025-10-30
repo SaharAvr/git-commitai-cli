@@ -174,28 +174,19 @@ describe('GitManager', () => {
         expect.objectContaining({ stdio: 'inherit' })
       );
     });
-    it('should write error output to stdout and stderr', () => {
-      const mockStdout = Buffer.from('stdout error');
-      const mockStderr = Buffer.from('stderr error');
-      const mockError = {
-        stdout: mockStdout,
-        stderr: mockStderr,
-        message: 'commit failed',
-      };
+    it('should throw GitError with actual error message', () => {
+      const mockError = new Error(
+        'Command failed: git commit -m "msg"\nhooks/pre-commit: line 5: error message'
+      );
 
       (execSync as jest.Mock).mockImplementation(() => {
         throw mockError;
       });
 
-      const stdoutSpy = jest.spyOn(process.stdout, 'write');
-      const stderrSpy = jest.spyOn(process.stderr, 'write');
-
       expect(() => GitManager.commit('msg')).toThrow(GitError);
-      expect(stdoutSpy).toHaveBeenCalledWith(mockStdout.toString());
-      expect(stderrSpy).toHaveBeenCalledWith(mockStderr.toString());
-
-      stdoutSpy.mockRestore();
-      stderrSpy.mockRestore();
+      expect(() => GitManager.commit('msg')).toThrow(
+        'Command failed: git commit -m "msg"\nhooks/pre-commit: line 5: error message'
+      );
     });
   });
 });
