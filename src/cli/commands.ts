@@ -123,6 +123,17 @@ export async function promptCommitMessage(
         console.log();
         rl.close();
       } catch (error) {
+        // Handle user cancellation (Ctrl+C) gracefully
+        if (
+          error instanceof Error &&
+          (error.name === 'ExitPromptError' ||
+            error.message.includes('SIGINT') ||
+            error.message.includes('force_closed'))
+        ) {
+          rl.close();
+          process.exit(0);
+        }
+
         const errorMsg = error instanceof Error ? error.message : 'Failed to commit changes';
         console.error(chalk.red(`\ngit-commitai: ${errorMsg}`));
         rl.close();
@@ -135,6 +146,17 @@ export async function promptCommitMessage(
       await promptCommitMessage(rl, newPreviousMessages, prefix, commandArgs, skipConfirmation);
     }
   } catch (error) {
+    // Handle user cancellation (Ctrl+C) gracefully
+    if (
+      error instanceof Error &&
+      (error.name === 'ExitPromptError' ||
+        error.message.includes('SIGINT') ||
+        error.message.includes('force_closed'))
+    ) {
+      rl.close();
+      process.exit(0);
+    }
+
     const errorMsg = error instanceof Error ? error.message : 'Failed to generate commit message';
     console.error(chalk.red(`\ngit-commitai: ${errorMsg}`));
     rl.close();

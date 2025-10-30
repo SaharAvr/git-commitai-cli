@@ -119,7 +119,7 @@ export class GitManager {
   public static commit(message: string, args: string[] = []): void {
     try {
       const argsStr = args.length > 0 ? ' ' + args.join(' ') : '';
-      execSync(`git commit -m "${message.replace(/"/g, '"')}"${argsStr}`, {
+      execSync(`git commit -m "${message.replace(/"/g, '\\"')}"${argsStr}`, {
         stdio: 'inherit',
       });
     } catch (error: any) {
