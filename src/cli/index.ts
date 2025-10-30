@@ -7,7 +7,7 @@ import { GitManager } from '../git';
 import { COMMAND_KEYWORDS } from '../types';
 
 // Import all CLI components
-import { showHelp, showSettings, promptCommitMessage } from './commands';
+import { showHelp, showVersion, showSettings, promptCommitMessage } from './commands';
 import { promptForProvider } from './prompt';
 import { checkForUpdates } from './updater';
 
@@ -41,14 +41,22 @@ process.on('uncaughtException', (error) => {
 async function mainFunc(): Promise<void> {
   // Command line arguments
   const args = process.argv.slice(2);
-  const { prefix, args: commandArgs, skipConfirmation } = GitManager.processCommitArgs(args);
 
-  // Process commands
-  if (COMMAND_KEYWORDS.HELP.some((keyword) => commandArgs.includes(keyword))) {
+  // Check for help and version flags FIRST (before processing through GitManager)
+  // This prevents -v from being interpreted as a git diff option
+  if (COMMAND_KEYWORDS.HELP.some((keyword) => args.includes(keyword))) {
     showHelp(rl);
     return;
   }
 
+  if (COMMAND_KEYWORDS.VERSION.some((keyword) => args.includes(keyword))) {
+    showVersion(rl);
+    return;
+  }
+
+  const { prefix, args: commandArgs, skipConfirmation } = GitManager.processCommitArgs(args);
+
+  // Process other commands
   if (COMMAND_KEYWORDS.SETTINGS.some((keyword) => commandArgs.includes(keyword))) {
     showSettings(rl);
     return;

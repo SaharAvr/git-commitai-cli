@@ -6,6 +6,7 @@ import { AIManager } from '../ai';
 import { ApiProvider } from '../types';
 import { displayHelpMessage, displaySettingsHeader } from './messages';
 import { promptForProvider, promptForDefaultProvider } from './prompt';
+import { getCurrentVersion } from '../utils/version';
 
 /**
  * Checks if an error is related to rate limiting
@@ -32,6 +33,19 @@ function isRateLimitError(error: any): boolean {
  */
 export function showHelp(rl: any): void {
   displayHelpMessage();
+  rl.close();
+}
+
+/**
+ * Handles the version command
+ */
+export function showVersion(rl: any): void {
+  try {
+    const version = getCurrentVersion();
+    console.log(`git-commitai-cli v${version}`);
+  } catch {
+    console.log('git-commitai-cli (version unknown)');
+  }
   rl.close();
 }
 

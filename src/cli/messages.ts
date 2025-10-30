@@ -56,8 +56,10 @@ export function displayHelpMessage(): void {
 
   console.log(chalk.yellow('Options:'));
   console.log(
-    `  ${chalk.cyan('-y, --yes')}                      Auto-accept the generated commit message\n`
+    `  ${chalk.cyan('-y, --yes')}                      Auto-accept the generated commit message`
   );
+  console.log(`  ${chalk.cyan('-h, --help')}                     Show this help information`);
+  console.log(`  ${chalk.cyan('-v, --version')}                  Show version information\n`);
 
   console.log(chalk.yellow('Examples:'));
   console.log(`  ${chalk.cyan('git commitai')}                   Generate a commit message`);

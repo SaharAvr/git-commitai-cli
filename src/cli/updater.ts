@@ -1,39 +1,12 @@
 import https from 'https';
 import { exec } from 'child_process';
 import { promisify } from 'util';
-import fs from 'fs';
-import path from 'path';
 import chalk from 'chalk';
 import inquirer from 'inquirer';
 import { ConfigManager } from '../config';
+import { getCurrentVersion } from '../utils/version';
 
 const execAsync = promisify(exec);
-
-/**
- * Gets the current package version
- */
-function getCurrentVersion(): string {
-  // Try multiple paths to find package.json
-  const paths = [
-    // When globally installed: dist/cli.cjs -> ../package.json
-    path.join(__dirname, '../package.json'),
-    // When in development: src/cli/updater.ts -> ../../package.json
-    path.join(__dirname, '../../package.json'),
-  ];
-
-  for (const packageJsonPath of paths) {
-    try {
-      if (fs.existsSync(packageJsonPath)) {
-        const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
-        return packageJson.version;
-      }
-    } catch {
-      continue;
-    }
-  }
-
-  throw new Error('Could not find package.json');
-}
 
 /**
  * Fetches the latest version from npm registry
