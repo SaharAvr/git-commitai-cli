@@ -38,11 +38,11 @@
   "author": "Sahar Avraham",
   "license": "MIT",
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.50.4",
-    "@google/genai": "^0.13.0",
+    "@anthropic-ai/sdk": "^0.68.0",
+    "@google/genai": "^1.28.0",
     "chalk": "^4.1.2",
     "inquirer": "^12.6.1",
-    "openai": "^6.5.0"
+    "openai": "^6.7.0"
   },
   "devDependencies": {
     "@types/chalk": "^2.2.4",
