@@ -136,4 +136,13 @@ export class ConfigManager {
     this.config.defaultProvider = provider;
     this.saveConfig();
   }
+
+  /**
+   * Gets all providers that have API keys configured
+   */
+  public getAvailableProviders(): ApiProvider[] {
+    return Object.entries(this.config.apiKeys)
+      .filter(([, key]) => !!key)
+      .map(([provider]) => provider as ApiProvider);
+  }
 }

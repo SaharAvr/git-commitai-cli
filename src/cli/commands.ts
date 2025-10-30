@@ -3,8 +3,29 @@ import inquirer from 'inquirer';
 import { GitManager, GitStatus } from '../git';
 import { ConfigManager } from '../config';
 import { AIManager } from '../ai';
+import { ApiProvider } from '../types';
 import { displayHelpMessage, displaySettingsHeader } from './messages';
 import { promptForProvider, promptForDefaultProvider } from './prompt';
+
+/**
+ * Checks if an error is related to rate limiting
+ */
+function isRateLimitError(error: any): boolean {
+  if (!error) return false;
+
+  const errorStr = error.toString().toLowerCase();
+  const errorMsg = error.message ? error.message.toLowerCase() : '';
+
+  return (
+    errorStr.includes('rate limit') ||
+    errorStr.includes('too many requests') ||
+    errorStr.includes('429') ||
+    errorMsg.includes('rate limit') ||
+    errorMsg.includes('too many requests') ||
+    errorMsg.includes('429') ||
+    errorMsg.includes('quota')
+  );
+}
 
 /**
  * Handles the help command
@@ -74,7 +95,8 @@ export async function promptCommitMessage(
   previousMessages: string[] = [],
   prefix?: string,
   commandArgs: string[] = [],
-  skipConfirmation: boolean = false
+  skipConfirmation: boolean = false,
+  triedProviders: ApiProvider[] = []
 ): Promise<void> {
   try {
     const configManager = new ConfigManager();
@@ -155,6 +177,55 @@ export async function promptCommitMessage(
     ) {
       rl.close();
       process.exit(0);
+    }
+
+    // Check if it's a rate limit error
+    if (isRateLimitError(error)) {
+      const configManager = new ConfigManager();
+      const currentProvider = configManager.getDefaultProvider();
+      const availableProviders = configManager.getAvailableProviders();
+
+      // Mark current provider as tried
+      const newTriedProviders = [...triedProviders, currentProvider];
+
+      // Find next available provider that hasn't been tried
+      const nextProvider = availableProviders.find((p) => !newTriedProviders.includes(p));
+
+      if (nextProvider) {
+        console.log(
+          chalk.yellow(`\n⚠️  Rate limit reached for ${currentProvider}. Trying ${nextProvider}...`)
+        );
+
+        // Temporarily switch to next provider
+        const originalProvider = currentProvider;
+        await configManager.setDefaultProvider(nextProvider);
+
+        try {
+          // Retry with the next provider
+          await promptCommitMessage(
+            rl,
+            previousMessages,
+            prefix,
+            commandArgs,
+            skipConfirmation,
+            newTriedProviders
+          );
+
+          // If successful, restore original provider
+          await configManager.setDefaultProvider(originalProvider);
+          return;
+        } catch (retryError) {
+          // Restore original provider before handling retry error
+          await configManager.setDefaultProvider(originalProvider);
+          throw retryError;
+        }
+      } else {
+        // All providers have been tried
+        const errorMsg = `Rate limit reached for all available providers. Please try again later.`;
+        console.error(chalk.red(`\ngit-commitai: ${errorMsg}`));
+        rl.close();
+        process.exit(1);
+      }
     }
 
     const errorMsg = error instanceof Error ? error.message : 'Failed to generate commit message';

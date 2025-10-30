@@ -290,6 +290,43 @@ describe('ConfigManager', () => {
     });
   });
 
+  describe('getAvailableProviders', () => {
+    it('should return list of providers that have API keys', () => {
+      // Setup mock with multiple providers
+      (fs.existsSync as jest.Mock).mockReturnValueOnce(true);
+      (fs.readFileSync as jest.Mock).mockReturnValueOnce(JSON.stringify(mockConfig));
+
+      const configManager = new ConfigManager();
+      const providers = configManager.getAvailableProviders();
+
+      expect(providers).toContain(ApiProvider.OPENAI);
+      expect(providers).toContain(ApiProvider.GOOGLE);
+      expect(providers).toHaveLength(2);
+    });
+
+    it('should not return providers without API keys', () => {
+      // Setup mock with only one provider having a key
+      const configWithOneKey = {
+        apiKeys: {
+          [ApiProvider.OPENAI]: 'test-key-123',
+          [ApiProvider.GOOGLE]: '',
+          [ApiProvider.ANTHROPIC]: undefined,
+        },
+        defaultProvider: ApiProvider.OPENAI,
+      };
+      (fs.existsSync as jest.Mock).mockReturnValueOnce(true);
+      (fs.readFileSync as jest.Mock).mockReturnValueOnce(JSON.stringify(configWithOneKey));
+
+      const configManager = new ConfigManager();
+      const providers = configManager.getAvailableProviders();
+
+      expect(providers).toContain(ApiProvider.OPENAI);
+      expect(providers).not.toContain(ApiProvider.GOOGLE);
+      expect(providers).not.toContain(ApiProvider.ANTHROPIC);
+      expect(providers).toHaveLength(1);
+    });
+  });
+
   describe('hasApiKey', () => {
     it('should return true if key exists for provider', () => {
       // Setup mock
