@@ -9,6 +9,7 @@ import { COMMAND_KEYWORDS } from '../types';
 // Import all CLI components
 import { showHelp, showSettings, promptCommitMessage } from './commands';
 import { promptForProvider } from './prompt';
+import { checkForUpdates } from './updater';
 
 // Create readline interface
 const rl = readline.createInterface({
@@ -53,6 +54,9 @@ async function mainFunc(): Promise<void> {
     return;
   }
 
+  // Check for updates (non-blocking)
+  await checkForUpdates();
+
   // Process API key setup
   const configManager = new ConfigManager();
   const defaultProvider = configManager.getDefaultProvider();
@@ -93,3 +97,4 @@ export * from './commands';
 export * from './messages';
 export * from './prompt';
 export * from './validation';
+export * from './updater';

@@ -145,4 +145,19 @@ export class ConfigManager {
       .filter(([, key]) => !!key)
       .map(([provider]) => provider as ApiProvider);
   }
+
+  /**
+   * Gets the last declined update version
+   */
+  public getLastDeclinedUpdateVersion(): string | undefined {
+    return this.config.lastDeclinedUpdateVersion;
+  }
+
+  /**
+   * Sets the last declined update version
+   */
+  public async setLastDeclinedUpdateVersion(version: string): Promise<void> {
+    this.config.lastDeclinedUpdateVersion = version;
+    this.saveConfig();
+  }
 }

@@ -562,4 +562,42 @@ describe('ConfigManager', () => {
       expect(configManager.getDefaultProvider()).toBe(ApiProvider.GOOGLE);
     });
   });
+
+  describe('getLastDeclinedUpdateVersion', () => {
+    it('should return undefined if no version is set', () => {
+      // Setup mock with no lastDeclinedUpdateVersion
+      (fs.existsSync as jest.Mock).mockReturnValueOnce(true);
+      (fs.readFileSync as jest.Mock).mockReturnValueOnce(JSON.stringify(mockConfig));
+
+      const configManager = new ConfigManager();
+      expect(configManager.getLastDeclinedUpdateVersion()).toBeUndefined();
+    });
+
+    it('should return the last declined update version if set', () => {
+      // Setup mock with lastDeclinedUpdateVersion
+      const configWithVersion = {
+        ...mockConfig,
+        lastDeclinedUpdateVersion: '2.4.0',
+      };
+      (fs.existsSync as jest.Mock).mockReturnValueOnce(true);
+      (fs.readFileSync as jest.Mock).mockReturnValueOnce(JSON.stringify(configWithVersion));
+
+      const configManager = new ConfigManager();
+      expect(configManager.getLastDeclinedUpdateVersion()).toBe('2.4.0');
+    });
+  });
+
+  describe('setLastDeclinedUpdateVersion', () => {
+    it('should set the last declined update version', async () => {
+      // Setup mock
+      (fs.existsSync as jest.Mock).mockReturnValueOnce(true);
+      (fs.readFileSync as jest.Mock).mockReturnValueOnce(JSON.stringify(mockConfig));
+
+      const configManager = new ConfigManager();
+      await configManager.setLastDeclinedUpdateVersion('2.4.0');
+
+      expect(fs.writeFileSync).toHaveBeenCalled();
+      expect(configManager.getLastDeclinedUpdateVersion()).toBe('2.4.0');
+    });
+  });
 });

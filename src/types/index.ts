@@ -20,6 +20,7 @@ export interface ApiKeys {
 export interface Config {
   apiKeys: ApiKeys;
   defaultProvider?: ApiProvider;
+  lastDeclinedUpdateVersion?: string;
 }
 
 export interface CommitArgs {
