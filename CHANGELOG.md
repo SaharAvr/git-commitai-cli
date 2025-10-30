@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.6.0] - 2025-10-30
+
+### Added
+- Support for `-v` and `--version` flags to display current version
+- Version command that works in both development and production environments
+- Shared version utility to eliminate code duplication
+- Comprehensive test suite for version utility (5 new tests)
+
+### Changed
+- Version and help flags are now handled before git operations to prevent conflicts
+- Updated help message to include `-v, --version` and `-h, --help` options
+- Upgraded `@google/genai` from 0.13.0 to 1.28.0 (fixes punycode deprecation warning)
+- Upgraded `@anthropic-ai/sdk` from 0.50.4 to 0.68.0
+- Upgraded `openai` from 6.5.0 to 6.7.0
+
+### Fixed
+- Fixed `-v` flag being incorrectly interpreted as git diff option
+- Eliminated punycode deprecation warning by updating dependencies
+
 ## [2.5.1] - 2025-10-30
 
 ### Fixed
