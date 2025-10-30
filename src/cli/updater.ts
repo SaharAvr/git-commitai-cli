@@ -13,10 +13,26 @@ const execAsync = promisify(exec);
  * Gets the current package version
  */
 function getCurrentVersion(): string {
-  // Read version from package.json - let it throw if it fails
-  const packageJsonPath = path.join(__dirname, '../../package.json');
-  const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
-  return packageJson.version;
+  // Try multiple paths to find package.json
+  const paths = [
+    // When globally installed: dist/cli.cjs -> ../package.json
+    path.join(__dirname, '../package.json'),
+    // When in development: src/cli/updater.ts -> ../../package.json
+    path.join(__dirname, '../../package.json'),
+  ];
+
+  for (const packageJsonPath of paths) {
+    try {
+      if (fs.existsSync(packageJsonPath)) {
+        const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+        return packageJson.version;
+      }
+    } catch {
+      continue;
+    }
+  }
+
+  throw new Error('Could not find package.json');
 }
 
 /**
