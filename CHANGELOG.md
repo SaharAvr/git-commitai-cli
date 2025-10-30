@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.0] - 2025-10-30
+
+### Added
+- Automatic update checker that notifies users when a new version is available
+- Interactive prompt allowing users to update immediately or decline (similar to oh-my-zsh)
+- Remembers declined versions to avoid repeated prompts for the same version
+- Automatic provider fallback on rate limit errors - tries other configured providers automatically
+- Clear error messages that show actual git/AI errors instead of generic messages
+
+### Fixed
+- Improved error handling in git commit command to preserve and display actual error messages
+- SIGINT handling when user cancels with Ctrl+C - now exits gracefully without error message
+- Quote escaping in commit messages containing double quotes
+
 ## [2.3.2] - 2025-10-30
 
 ### Fixed
