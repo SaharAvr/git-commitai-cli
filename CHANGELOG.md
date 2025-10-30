@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.1] - 2025-10-30
+
+### Fixed
+- Update checker not working when package is installed globally - now correctly finds package.json in both development and production environments
+- Added package.json to published files to ensure version information is available
+
 ## [2.5.0] - 2025-10-30
 
 ### Added
