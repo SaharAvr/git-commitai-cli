@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.0] - 2025-10-30
+
+### Added
+- Binary and asset file detection - automatically skips diffing for images, videos, audio, archives, executables, documents, fonts, and other binary formats
+- Files without extensions are now treated as binary/asset files
+- Comprehensive binary extension list covering 40+ common binary file types
+- Smart file handling that shows `[File: filename - Binary/Asset file]` instead of attempting to diff binary content
+
+### Changed
+- Improved git diff handling to prevent sending binary file content to AI models
+- Files like Makefile, Dockerfile, LICENSE (without extensions) are now treated as binary
+
 ## [2.4.0] - 2025-10-30
 
 ### Added
