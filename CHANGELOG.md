@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.1] - 2025-10-30
+
+### Fixed
+- Critical error handling issue where AI call or git commit failures would exit with code 0 instead of code 1
+- This caused subsequent commands in chains (e.g., `git add . && git commitai -y && git push`) to execute even when git-commitai failed
+- Now properly exits with error code 1 and displays clear error messages prefixed with "git-commitai:" when failures occur
+
 ## [2.3.0] - 2025-10-18
 
 ### Added
