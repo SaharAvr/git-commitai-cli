@@ -79,8 +79,9 @@ export function showSettings(rl: any): void {
         message: 'Select an option:',
         choices: [
           { name: 'Add/Update API key', value: '1' },
-          { name: 'Change default provider', value: '2' },
-          { name: 'Exit', value: '3' },
+          { name: 'View API keys', value: '2' },
+          { name: 'Change default provider', value: '3' },
+          { name: 'Exit', value: '4' },
         ],
       },
     ])
@@ -90,11 +91,60 @@ export function showSettings(rl: any): void {
           console.log();
           await promptForProvider();
           break;
-        case '2':
+        case '2': {
+          console.log();
+
+          const apiKeysFull = configManager.getApiKeys();
+          const providers = [ApiProvider.OPENAI, ApiProvider.GOOGLE, ApiProvider.ANTHROPIC];
+
+          const { confirmView } = await inquirer.prompt([
+            {
+              type: 'confirm',
+              name: 'confirmView',
+              message:
+                'This will display your full API keys in the terminal. Do you want to continue?',
+              default: false,
+            },
+          ]);
+
+          if (confirmView) {
+            console.log(chalk.yellow('API Keys (full values):'));
+            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+            providers.forEach((provider) => {
+              const key = apiKeysFull[provider];
+              const label = chalk.cyan(provider);
+              if (key) {
+                console.log(`  - ${label}: ${key}`);
+              } else {
+                console.log(`  - ${label}: Not set`);
+              }
+            });
+            console.log();
+
+            const { edit } = await inquirer.prompt([
+              {
+                type: 'confirm',
+                name: 'edit',
+                message: 'Would you like to add or update an API key now?',
+                default: false,
+              },
+            ]);
+
+            if (edit) {
+              console.log();
+              await promptForProvider();
+            }
+          }
+
+          rl.close();
+          break;
+        }
+        case '3':
           console.log();
           await promptForDefaultProvider();
           break;
-        case '3':
+        case '4':
           rl.close();
           break;
       }
