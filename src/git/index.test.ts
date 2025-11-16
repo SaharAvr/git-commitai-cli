@@ -35,6 +35,14 @@ describe('GitManager', () => {
       const result = GitManager.processCommitArgs(['config']);
       expect(result).toEqual({ prefix: '', args: ['config'], skipConfirmation: false });
     });
+    it('should treat --settings flag as argument not prefix', () => {
+      const result = GitManager.processCommitArgs(['--settings']);
+      expect(result).toEqual({ prefix: '', args: ['--settings'], skipConfirmation: false });
+    });
+    it('should treat --config flag as argument not prefix', () => {
+      const result = GitManager.processCommitArgs(['--config']);
+      expect(result).toEqual({ prefix: '', args: ['--config'], skipConfirmation: false });
+    });
     it('should treat --help flag as argument not prefix', () => {
       const result = GitManager.processCommitArgs(['--help']);
       expect(result).toEqual({ prefix: '', args: ['--help'], skipConfirmation: false });

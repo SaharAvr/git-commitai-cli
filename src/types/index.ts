@@ -52,7 +52,7 @@ export type AIModelImplementation = ChatGptAIManager | GeminiManager | ClaudeMan
 export const COMMAND_KEYWORDS = {
   HELP: ['help', '--help', '-h'],
   VERSION: ['--version', '-v'],
-  SETTINGS: ['settings', 'config'],
+  SETTINGS: ['settings', 'config', '--settings', '--config'],
 } as const;
 
 // Flattened array of all command keywords for easy checking
