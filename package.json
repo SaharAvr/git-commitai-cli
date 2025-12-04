@@ -4,8 +4,16 @@
   "description": "AI-powered git commit message generator",
   "main": "dist/cli.js",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SaharAvr/git-commitai-cli.git"
+  },
+  "bugs": {
+    "url": "https://github.com/SaharAvr/git-commitai-cli/issues"
+  },
+  "homepage": "https://github.com/SaharAvr/git-commitai-cli#readme",
   "bin": {
-    "git-commitai": "./dist/cli.cjs"
+    "git-commitai": "dist/cli.cjs"
   },
   "files": [
     "dist",

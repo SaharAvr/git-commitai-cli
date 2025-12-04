@@ -91,6 +91,10 @@ jobs:
   publish:
     needs: [build, create-tag]
     runs-on: ubuntu-latest
+    # Required permissions for npm trusted publishing (OIDC)
+    permissions:
+      contents: read
+      id-token: write  # Required for OIDC token generation
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -101,11 +105,23 @@ jobs:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
 
+      # Ensure npm 11.5.1+ is installed (required for trusted publishing)
+      - name: Update npm to latest
+        run: |
+          npm install -g npm@latest
+          echo "npm version: $(npm --version)"
+
+      # Remove .npmrc created by setup-node to let OIDC handle authentication
+      - name: Configure npm for OIDC
+        run: |
+          rm -f .npmrc ~/.npmrc
+          npm config set registry https://registry.npmjs.org/
+
       - name: Check published version
         id: check-version
         run: |
           CURRENT_VERSION=$(node -p "require('./package.json').version")
-          PUBLISHED_VERSION=$(npm view git-commitai-cli version)
+          PUBLISHED_VERSION=$(npm view git-commitai-cli version 2>/dev/null || echo "0.0.0")
           if [ "$CURRENT_VERSION" = "$PUBLISHED_VERSION" ] || [ "$(echo -e "$CURRENT_VERSION\n$PUBLISHED_VERSION" | sort -V | head -n1)" = "$CURRENT_VERSION" ]; then
             echo "Current version ($CURRENT_VERSION) is the same or lower than the published version ($PUBLISHED_VERSION). Exiting."
             echo "should_publish=false" >> $GITHUB_OUTPUT
@@ -121,8 +137,8 @@ jobs:
           npx esbuild --version
           npm list esbuild
 
+      # Publish using OIDC trusted publishing - no NPM_TOKEN needed!
+      # Provenance attestation is automatically generated
       - name: Publish to npm
         if: steps.check-version.outputs.should_publish == 'true'
-        run: npm publish --access=public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --access=public --provenance
