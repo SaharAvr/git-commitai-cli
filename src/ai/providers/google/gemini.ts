@@ -18,7 +18,7 @@ export class GeminiManager extends BaseAIManager {
       const gemini = new GoogleGenAI({ apiKey: this.apiKey });
 
       const result = await gemini.models.generateContent({
-        model: 'gemini-2.0-flash-001',
+        model: 'gemini-3.1-flash-lite',
         contents: [{ role: 'user', parts: [{ text: requestBody.messages[0].content }] }],
         config: {
           temperature: BaseAIManager.TEMPERATURE,

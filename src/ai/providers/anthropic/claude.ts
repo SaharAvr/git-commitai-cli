@@ -20,7 +20,7 @@ export class ClaudeManager extends BaseAIManager {
       });
 
       const result = await anthropic.messages.create({
-        model: 'claude-3-5-haiku-latest',
+        model: 'claude-haiku-4-5',
         max_tokens: BaseAIManager.MAX_TOKENS,
         temperature: BaseAIManager.TEMPERATURE,
         messages: [

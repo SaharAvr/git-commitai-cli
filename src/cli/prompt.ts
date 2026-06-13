@@ -142,15 +142,15 @@ export async function promptForProvider(): Promise<void> {
 
   const providerChoices = [
     {
-      name: `${chalk.cyan('OpenAI')} (GPT-4)${apiKeys[ApiProvider.OPENAI] ? chalk.green(' [Key set]') : ''}`,
+      name: `${chalk.cyan('OpenAI')} (GPT-4o mini)${apiKeys[ApiProvider.OPENAI] ? chalk.green(' [Key set]') : ''}`,
       value: ApiProvider.OPENAI,
     },
     {
-      name: `${chalk.cyan('Google')} (Gemini Pro)${apiKeys[ApiProvider.GOOGLE] ? chalk.green(' [Key set]') : ''}`,
+      name: `${chalk.cyan('Google')} (Gemini 3.1 Flash-Lite)${apiKeys[ApiProvider.GOOGLE] ? chalk.green(' [Key set]') : ''}`,
       value: ApiProvider.GOOGLE,
     },
     {
-      name: `${chalk.cyan('Anthropic')} (Claude 3)${apiKeys[ApiProvider.ANTHROPIC] ? chalk.green(' [Key set]') : ''}`,
+      name: `${chalk.cyan('Anthropic')} (Claude Haiku 4.5)${apiKeys[ApiProvider.ANTHROPIC] ? chalk.green(' [Key set]') : ''}`,
       value: ApiProvider.ANTHROPIC,
     },
   ];
