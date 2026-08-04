@@ -1,116 +1,131 @@
 import { GeminiManager } from './gemini';
+import { GoogleGenAI } from '@google/genai';
 
-// Mock the entire gemini.ts module implementation
-jest.mock('./gemini', () => {
-  // Keep track of the last request made
-  let lastRequest: any = null;
-
-  // Mock implementation that exposes the request for testing
-  const mockMakeRequest = jest.fn().mockImplementation(async (requestBody: any) => {
-    lastRequest = requestBody;
-    return { content: 'test commit message' };
-  });
-
-  // Create a proper class to mock the GeminiManager
-  class MockGeminiManager {
-    constructor() {}
-
-    // Public method to get the last request
-    getLastRequest() {
-      return lastRequest;
-    }
-
-    // Public setter for mockMakeRequest to return different values or throw
-    static setMockImplementation(implementation: any) {
-      mockMakeRequest.mockImplementation(implementation);
-    }
-
-    // Expose the mock function for verification
-    static getMockFunction() {
-      return mockMakeRequest;
-    }
-
-    // Implement the required method
-    async generateCommitMessage(changes: string) {
-      let promptText = 'Please suggest a git commit message following Conventional Commits format.';
-      const fullPrompt = `${promptText}\n\nChanges:\n${changes}`;
-
-      const response = await mockMakeRequest({
-        messages: [{ role: 'user', content: fullPrompt }],
-      });
-      return response.content || '';
-    }
-
-    // Reset the lastRequest for testing
-    static resetRequest() {
-      lastRequest = {
-        messages: [{ role: 'user', content: 'test' }],
-      };
-    }
-  }
-
-  return {
-    GeminiManager: MockGeminiManager,
-  };
-});
-
-// Import the mocked implementation
-const MockGeminiManager = GeminiManager as any;
+// Mock the @google/genai module
+jest.mock('@google/genai');
 
 describe('GeminiManager', () => {
   let manager: GeminiManager;
+  let mockGenerateContent: jest.Mock;
+
+  let consoleErrorSpy: jest.SpyInstance;
 
   beforeEach(() => {
+    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
     jest.clearAllMocks();
     manager = new GeminiManager('test-api-key');
 
-    // Initialize the lastRequest
-    MockGeminiManager.resetRequest();
+    mockGenerateContent = jest.fn().mockResolvedValue({
+      candidates: [
+        {
+          content: {
+            parts: [{ text: 'test commit message' }],
+          },
+        },
+      ],
+    });
 
-    // Reset the mock to return a successful response by default
-    MockGeminiManager.setMockImplementation(async () => {
-      return { content: 'test commit message' };
+    (GoogleGenAI as jest.Mock).mockImplementation(() => ({
+      models: {
+        generateContent: mockGenerateContent,
+      },
+    }));
+  });
+
+  afterEach(() => {
+    consoleErrorSpy.mockRestore();
+  });
+
+  it('should initialize GoogleGenAI with the correct API key', async () => {
+    await (manager as any).makeRequest({
+      messages: [{ content: 'test request' }],
+    });
+
+    expect(GoogleGenAI).toHaveBeenCalledWith({ apiKey: 'test-api-key' });
+  });
+
+  it('should call generateContent with correct model and parameters', async () => {
+    await (manager as any).makeRequest({
+      messages: [{ content: 'test prompt' }],
+    });
+
+    expect(mockGenerateContent).toHaveBeenCalledWith({
+      model: 'gemini-3.1-flash-lite',
+      contents: [{ role: 'user', parts: [{ text: 'test prompt' }] }],
+      config: expect.any(Object),
     });
   });
 
-  it('should generate a commit message using the provided changes', async () => {
-    const changes = 'Added new feature';
+  it('should extract text from parts correctly (bypassing text getter)', async () => {
+    // Test the specific fix for bypassing the warning by extracting parts directly
+    mockGenerateContent.mockResolvedValue({
+      candidates: [
+        {
+          content: {
+            parts: [{ text: 'part 1 ' }, { thoughtSignature: 'thought' }, { text: 'part 2' }],
+          },
+        },
+      ],
+      // We set text getter just to ensure we aren't using it
+      get text() {
+        return 'getter text';
+      },
+    });
 
-    await manager.generateCommitMessage(changes);
+    const result = await (manager as any).makeRequest({
+      messages: [{ content: 'test request' }],
+    });
 
-    // The request should exist
-    const lastRequest = (manager as any).getLastRequest();
-    expect(lastRequest).not.toBeNull();
-    expect(lastRequest.messages[0].role).toBe('user');
+    // Should concatenate the text parts, ignoring non-text parts and text getter
+    expect(result.content).toBe('part 1 part 2');
   });
 
-  it('should handle errors properly', async () => {
+  it('should fallback to text getter when parts are not available', async () => {
+    mockGenerateContent.mockResolvedValue({
+      // No candidates or parts
+      text: 'fallback text',
+    });
+
+    const result = await (manager as any).makeRequest({
+      messages: [{ content: 'test request' }],
+    });
+
+    expect(result.content).toBe('fallback text');
+  });
+
+  it('should fallback to empty string when text getter and parts are not available', async () => {
+    mockGenerateContent.mockResolvedValue(null);
+
+    const result = await (manager as any).makeRequest({
+      messages: [{ content: 'test request' }],
+    });
+
+    expect(result.content).toBe('');
+  });
+
+  it('should handle API errors properly', async () => {
     const testError = new Error('API error');
+    mockGenerateContent.mockRejectedValue(testError);
 
-    // Mock the implementation to throw an error
-    MockGeminiManager.setMockImplementation(() => {
-      throw testError;
-    });
+    await expect(
+      (manager as any).makeRequest({
+        messages: [{ content: 'test request' }],
+      })
+    ).rejects.toThrow(testError);
 
-    // This should throw the error
-    await expect(manager.generateCommitMessage('changes')).rejects.toThrow(testError);
+    expect(consoleErrorSpy).toHaveBeenCalledWith('Gemini API error:', 'API error');
   });
 
-  it('should handle different response types', async () => {
-    // Test with empty content
-    MockGeminiManager.setMockImplementation(async () => {
-      return { content: '' };
-    });
+  it('should handle API errors that lack a message property', async () => {
+    const stringError = 'String API error';
+    mockGenerateContent.mockRejectedValue(stringError);
 
-    let result = await manager.generateCommitMessage('test changes');
-    expect(result).toBe('');
+    await expect(
+      (manager as any).makeRequest({
+        messages: [{ content: 'test request' }],
+      })
+    ).rejects.toEqual(stringError); // Using toEqual instead of toThrow because it throws a string
 
-    // Test with null content
-    MockGeminiManager.setMockImplementation(async () => {
-      return { content: null };
-    });
-
-    result = await manager.generateCommitMessage('test changes');
-    expect(result).toBe('');
+    expect(consoleErrorSpy).toHaveBeenCalledWith('Gemini API error:', 'String API error');
   });
 });

@@ -26,8 +26,21 @@ export class GeminiManager extends BaseAIManager {
         },
       });
 
+      let content = '';
+
+      const candidate = result?.candidates?.[0];
+      if (candidate?.content?.parts) {
+        content = candidate.content.parts
+          .filter((part: any) => part.text)
+          .map((part: any) => part.text)
+          .join('');
+      } else {
+        // Fallback to text getter if parts are not available
+        content = result?.text || '';
+      }
+
       return {
-        content: result?.text || '',
+        content,
       };
     } catch (error: any) {
       console.error('Gemini API error:', error?.message || error);
