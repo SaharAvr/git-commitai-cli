@@ -11,7 +11,7 @@ import { getCurrentVersion } from '../utils/version';
 /**
  * Checks if an error is related to rate limiting
  */
-function isRateLimitError(error: any): boolean {
+export function isRateLimitError(error: any): boolean {
   if (!error) return false;
 
   const errorStr = error.toString().toLowerCase();
@@ -160,20 +160,24 @@ export async function promptCommitMessage(
   prefix?: string,
   commandArgs: string[] = [],
   skipConfirmation: boolean = false,
-  triedProviders: ApiProvider[] = []
+  triedProviders: ApiProvider[] = [],
+  activeProvider?: ApiProvider
 ): Promise<void> {
+  const configManager = new ConfigManager();
+  const currentProvider = activeProvider || configManager.getDefaultProvider();
+
   try {
-    const configManager = new ConfigManager();
-    const provider = configManager.getDefaultProvider();
-    const apiKey = configManager.getApiKey(provider);
+    const apiKey = configManager.getApiKey(currentProvider);
 
     if (!apiKey) {
-      console.log(chalk.yellow(`\nNo API key found for ${provider}. Please set up your API key.`));
+      console.log(
+        chalk.yellow(`\nNo API key found for ${currentProvider}. Please set up your API key.`)
+      );
       await promptForProvider();
       return;
     }
 
-    const ai = new AIManager(apiKey, provider);
+    const ai = new AIManager(apiKey, currentProvider);
     const changes = GitManager.getStagedChanges();
 
     if (changes === GitStatus.NO_STAGED_CHANGES) {
@@ -229,7 +233,15 @@ export async function promptCommitMessage(
       // Regenerate a new commit message, passing the last three messages
       console.log();
       const newPreviousMessages = [...previousMessages, suggestedMsg].slice(-3);
-      await promptCommitMessage(rl, newPreviousMessages, prefix, commandArgs, skipConfirmation);
+      await promptCommitMessage(
+        rl,
+        newPreviousMessages,
+        prefix,
+        commandArgs,
+        skipConfirmation,
+        triedProviders,
+        currentProvider
+      );
     }
   } catch (error) {
     // Handle user cancellation (Ctrl+C) gracefully
@@ -245,8 +257,6 @@ export async function promptCommitMessage(
 
     // Check if it's a rate limit error
     if (isRateLimitError(error)) {
-      const configManager = new ConfigManager();
-      const currentProvider = configManager.getDefaultProvider();
       const availableProviders = configManager.getAvailableProviders();
 
       // Mark current provider as tried
@@ -260,29 +270,17 @@ export async function promptCommitMessage(
           chalk.yellow(`\n⚠️  Rate limit reached for ${currentProvider}. Trying ${nextProvider}...`)
         );
 
-        // Temporarily switch to next provider
-        const originalProvider = currentProvider;
-        await configManager.setDefaultProvider(nextProvider);
-
-        try {
-          // Retry with the next provider
-          await promptCommitMessage(
-            rl,
-            previousMessages,
-            prefix,
-            commandArgs,
-            skipConfirmation,
-            newTriedProviders
-          );
-
-          // If successful, restore original provider
-          await configManager.setDefaultProvider(originalProvider);
-          return;
-        } catch (retryError) {
-          // Restore original provider before handling retry error
-          await configManager.setDefaultProvider(originalProvider);
-          throw retryError;
-        }
+        // Retry with the next provider in memory without altering persistent config
+        await promptCommitMessage(
+          rl,
+          previousMessages,
+          prefix,
+          commandArgs,
+          skipConfirmation,
+          newTriedProviders,
+          nextProvider
+        );
+        return;
       } else {
         // All providers have been tried
         const errorMsg = `Rate limit reached for all available providers. Please try again later.`;
