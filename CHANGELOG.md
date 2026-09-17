@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.7.4] - 2026-09-17
+
+### Fixed
+- Fixed rate limit provider fallback mutating persistent config on disk, preventing fallback providers from unintentionally becoming the saved default provider
+- Retained active fallback provider and attempted providers across commit message regeneration attempts
+
 ## [2.7.3] - 2026-08-04
 
 ### Fixed
